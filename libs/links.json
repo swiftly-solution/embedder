@@ -1,0 +1,16 @@
+{
+    "libraries": {
+        "windows": [
+            "lua/lua.lib",
+            "js/qjs.lib"
+        ],
+        "linux": [
+            "lua/liblua.a",
+            "js/libqjs.a"
+        ]
+    },
+    "includes": [
+        "lua",
+        "js"
+    ]
+}
