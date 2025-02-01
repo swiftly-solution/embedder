@@ -1012,7 +1012,7 @@ struct Stack<std::pair<T1, T2>>
         Stack<T1>::pushLua(ctx, value.first);
         lua_settable(L, -3);
         lua_pushinteger(L, (lua_Integer)2);
-        Stack<T1>::pushLua(ctx, value.second);
+        Stack<T2>::pushLua(ctx, value.second);
         lua_settable(L, -3);
     }
 
@@ -1022,7 +1022,7 @@ struct Stack<std::pair<T1, T2>>
         JSValue arr = JS_NewArray(ctx);
 
         JS_SetPropertyUint32(ctx, arr, 0, Stack<T1>::pushJS(ctx, value.first));
-        JS_SetPropertyUint32(ctx, arr, 1, Stack<T1>::pushJS(ctx, value.second));
+        JS_SetPropertyUint32(ctx, arr, 1, Stack<T2>::pushJS(ctx, value.second));
 
         return arr;
     }
@@ -1044,7 +1044,7 @@ struct Stack<std::pair<T1, T2>>
         }
 
         if(lua_next(L, absidx) != 0) {
-            v.second = Stack<T1>::getLua(ctx, -1);
+            v.second = Stack<T2>::getLua(ctx, -1);
             lua_pop(L, 1);
         }
 
@@ -1066,12 +1066,12 @@ struct Stack<std::pair<T1, T2>>
         if(len != 2) return v;
 
         JSValue item = JS_GetPropertyUint32(L, value, 0);
-        v.first = Stack<T1>::getJS(ctx, value);
+        v.first = Stack<T1>::getJS(ctx, item);
         JS_FreeValue(L, item);
 
-        JSValue item = JS_GetPropertyUint32(L, value, 1);
-        v.second = Stack<T1>::getJS(ctx, value);
-        JS_FreeValue(L, item);
+        JSValue item2 = JS_GetPropertyUint32(L, value, 1);
+        v.second = Stack<T2>::getJS(ctx, item2);
+        JS_FreeValue(L, item2);
 
         return v;
     }
