@@ -2,6 +2,7 @@
 #define _embedder_internal_stack_h
 
 #include <optional>
+#include <array>
 #include <vector>
 #include <list>
 #include <map>
@@ -821,6 +822,93 @@ struct Stack<std::list<T>>
     static bool isJSInstance(EContext* ctx, JSValue value)
     {
         return JS_IsArray((JSContext*)ctx->GetState(), value);
+    }
+};
+
+template<class T, size_t s>
+struct Stack<std::array<T, s>>
+{
+    static void pushLua(EContext* ctx, std::array<T, s> value)
+    {
+        lua_State* L = (lua_State*)ctx->GetState();
+
+        lua_createtable(L, (int)(s), 0);
+
+        for(size_t i = 0; i < s; i++) {
+            lua_pushinteger(L, (lua_Integer)(i+1));
+            Stack<T>::pushLua(ctx, value[i]);
+            lua_settable(L, -3);
+        }
+    }
+
+    static JSValue pushJS(EContext* ctx, std::array<T, s> value)
+    {
+        JSContext* ctx = (JSContext*)ctx->GetState();
+        JSValue arr = JS_NewArray(ctx);
+
+        for(size_t i = 0; i < s; i++) {
+            JS_SetPropertyUint32(ctx, arr, i, Stack<T>::pushJS(ctx, value[i]));
+        }
+
+        return arr;
+    }
+
+    static std::array<T, s> getLua(EContext* ctx, int ref)
+    {
+        std::array<T, s> v;
+
+        lua_State* L = (lua_State*)ctx->GetState();
+        if(!lua_istable(L, ref)) return v;
+        if(get_length(L, ref) != s) return v;
+
+        int absidx = lua_absindex(L, ref);
+        lua_pushnil(L);
+        int arrIdx = 0;
+        while(lua_next(L, absidx) != 0) {
+            v[arrIdx] = Stack<T>::getLua(ctx, -1);
+            lua_pop(L, 1);
+            ++arrIdx;
+        }
+
+        return v;
+    }
+
+    static std::array<T, s> getJS(EContext* ctx, JSValue value)
+    {
+        std::array<T, s> v;
+
+        JSContext* L = (JSContext*)ctx->GetState();
+        if(!JS_IsArray(L, value)) return v;
+
+        uint32_t len;
+        JS_GetPropertyStr(L, value, "length");
+        JS_ToUint32(L, &len, value);
+
+        if(len != s) return v;
+
+        for(uint32_t i = 0; i < len; i++) {
+            JSValue item = JS_GetPropertyUint32(L, value, i);
+            v[i] = Stack<T>::getJS(ctx, value);
+            JS_FreeValue(L, item);
+        }
+
+        return v;
+    }
+
+    static bool isLuaInstance(EContext* ctx, int ref)
+    {
+        return lua_istable((lua_State*)ctx->GetState(), ref) && get_length((lua_State*)ctx->GetState(), ref) == s;
+    }
+
+    static bool isJSInstance(EContext* ctx, JSValue value)
+    {
+        if(!JS_IsArray((JSContext*)ctx->GetState(), value)) return false;
+
+        uint32_t len;
+        JS_GetPropertyStr((JSContext*)ctx->GetState(), value, "length");
+        JS_ToUint32((JSContext*)ctx->GetState(), &len, value);
+        
+        return len == s;
     }
 };
 
