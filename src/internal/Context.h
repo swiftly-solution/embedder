@@ -21,6 +21,7 @@ public:
 
     ContextKinds GetKind();
     int64_t GetMemoryUsage();
+    void* GetState();
 };
 
 #endif

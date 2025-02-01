@@ -54,8 +54,10 @@ protected:
                 JSValue exc = JS_GetException((JSContext*)m_ctx);
                 
                 if(JS_IsString(exc)) {
-                    toDeallocate = (char*)JS_ToCString((JSContext*)m_ctx, exc);
-                    m_what = toDeallocate;
+                    const char* tmp = JS_ToCString((JSContext*)m_ctx, exc);
+                    std::string str(tmp, strlen(tmp));
+                    m_what = str;
+                    JS_FreeCString((JSContext*)m_ctx, tmp);
                 } else m_what = "Empty error or invalid value.";
             }
         }

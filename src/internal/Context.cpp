@@ -74,3 +74,8 @@ int64_t EContext::GetMemoryUsage()
         return stats.memory_used_size;
     }
 }
+
+void* EContext::GetState()
+{
+    return m_state;
+}
