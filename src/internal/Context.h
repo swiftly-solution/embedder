@@ -22,6 +22,11 @@ public:
     ContextKinds GetKind();
     int64_t GetMemoryUsage();
     void* GetState();
+
+    int RunCode(std::string code);
 };
+
+EContext* GetContextByState(JSContext* ctx);
+EContext* GetContextByState(lua_State* ctx);
 
 #endif

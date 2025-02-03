@@ -34,7 +34,7 @@ struct Stack<nullptr_t>
 {
     static void pushLua(EContext* ctx, nullptr_t value = nullptr)
     {
-        lua_pushnil((lua_State*)ctx->GetState());
+        lua_pushnil((lua_State*)(ctx->GetState()));
     }
 
     static JSValue pushJS(EContext* ctx, nullptr_t value = nullptr)
@@ -54,7 +54,7 @@ struct Stack<nullptr_t>
 
     static bool isLuaInstance(EContext* ctx, int ref)
     {
-        return lua_isnil((lua_State*)ctx->GetState(), ref);
+        return lua_isnil((lua_State*)(ctx->GetState()), ref);
     }
 
     static bool isJSInstance(EContext* ctx, JSValue value)
@@ -68,32 +68,32 @@ struct Stack<int>
 {
     static void pushLua(EContext* ctx, int value)
     {
-        lua_pushinteger((lua_State*)ctx->GetState(), (lua_Integer)value);
+        lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
     }
 
     static JSValue pushJS(EContext* ctx, int value)
     {
-        return JS_NewInt32((JSContext*)ctx->GetState(), value);
+        return JS_NewInt32((JSContext*)(ctx->GetState()), value);
     }
 
     static int getLua(EContext* ctx, int ref)
     {
-        return (int)luaL_checkinteger((lua_State*)ctx->GetState(), ref);
+        return (int)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
     static int getJS(EContext* ctx, JSValue value)
     {
         int val;
-        JS_ToInt32((JSContext*)ctx->GetState(), &val, value);
+        JS_ToInt32((JSContext*)(ctx->GetState()), &val, value);
         return val;
     }
 
     static bool isLuaInstance(EContext* ctx, int ref)
     {
-        if(lua_type((lua_State*)ctx->GetState(), ref) != LUA_TNUMBER) return false;
+        if(lua_type((lua_State*)(ctx->GetState()), ref) != LUA_TNUMBER) return false;
 
         int isNumber;
-        lua_tointegerx((lua_State*)ctx->GetState(), ref, &isNumber);
+        lua_tointegerx((lua_State*)(ctx->GetState()), ref, &isNumber);
         return isNumber;
     }
 
@@ -108,23 +108,23 @@ struct Stack<unsigned int>
 {
     static void pushLua(EContext* ctx, unsigned int value)
     {
-        lua_pushinteger((lua_State*)ctx->GetState(), (lua_Integer)value);
+        lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
     }
 
     static JSValue pushJS(EContext* ctx, unsigned int value)
     {
-        return JS_NewUint32((JSContext*)ctx->GetState(), value);
+        return JS_NewUint32((JSContext*)(ctx->GetState()), value);
     }
 
     static unsigned int getLua(EContext* ctx, int ref)
     {
-        return (unsigned int)luaL_checkinteger((lua_State*)ctx->GetState(), ref);
+        return (unsigned int)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
     static unsigned int getJS(EContext* ctx, JSValue value)
     {
         unsigned int val;
-        JS_ToUint32((JSContext*)ctx->GetState(), &val, value);
+        JS_ToUint32((JSContext*)(ctx->GetState()), &val, value);
         return val;
     }
 
@@ -144,23 +144,23 @@ struct Stack<unsigned char>
 {
     static void pushLua(EContext* ctx, unsigned char value)
     {
-        lua_pushinteger((lua_State*)ctx->GetState(), (lua_Integer)value);
+        lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
     }
 
     static JSValue pushJS(EContext* ctx, unsigned char value)
     {
-        return JS_NewUint32((JSContext*)ctx->GetState(), value);
+        return JS_NewUint32((JSContext*)(ctx->GetState()), value);
     }
 
     static unsigned char getLua(EContext* ctx, int ref)
     {
-        return (unsigned char)luaL_checkinteger((lua_State*)ctx->GetState(), ref);
+        return (unsigned char)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
     static unsigned char getJS(EContext* ctx, JSValue value)
     {
         unsigned int val;
-        JS_ToUint32((JSContext*)ctx->GetState(), &val, value);
+        JS_ToUint32((JSContext*)(ctx->GetState()), &val, value);
         return (unsigned char)val;
     }
 
@@ -180,23 +180,23 @@ struct Stack<short>
 {
     static void pushLua(EContext* ctx, short value)
     {
-        lua_pushinteger((lua_State*)ctx->GetState(), (lua_Integer)value);
+        lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
     }
 
     static JSValue pushJS(EContext* ctx, short value)
     {
-        return JS_NewInt32((JSContext*)ctx->GetState(), value);
+        return JS_NewInt32((JSContext*)(ctx->GetState()), value);
     }
 
     static short getLua(EContext* ctx, int ref)
     {
-        return (short)luaL_checkinteger((lua_State*)ctx->GetState(), ref);
+        return (short)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
     static short getJS(EContext* ctx, JSValue value)
     {
         int val;
-        JS_ToInt32((JSContext*)ctx->GetState(), &val, value);
+        JS_ToInt32((JSContext*)(ctx->GetState()), &val, value);
         return (short)val;
     }
 
@@ -216,23 +216,23 @@ struct Stack<unsigned short>
 {
     static void pushLua(EContext* ctx, unsigned short value)
     {
-        lua_pushinteger((lua_State*)ctx->GetState(), (lua_Integer)value);
+        lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
     }
 
     static JSValue pushJS(EContext* ctx, unsigned short value)
     {
-        return JS_NewUint32((JSContext*)ctx->GetState(), value);
+        return JS_NewUint32((JSContext*)(ctx->GetState()), value);
     }
 
     static unsigned short getLua(EContext* ctx, int ref)
     {
-        return (unsigned short)luaL_checkinteger((lua_State*)ctx->GetState(), ref);
+        return (unsigned short)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
     static unsigned short getJS(EContext* ctx, JSValue value)
     {
         unsigned int val;
-        JS_ToUint32((JSContext*)ctx->GetState(), &val, value);
+        JS_ToUint32((JSContext*)(ctx->GetState()), &val, value);
         return (unsigned short)val;
     }
 
@@ -252,23 +252,23 @@ struct Stack<long>
 {
     static void pushLua(EContext* ctx, long value)
     {
-        lua_pushinteger((lua_State*)ctx->GetState(), (lua_Integer)value);
+        lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
     }
 
     static JSValue pushJS(EContext* ctx, long value)
     {
-        return JS_NewInt32((JSContext*)ctx->GetState(), value);
+        return JS_NewInt32((JSContext*)(ctx->GetState()), value);
     }
 
     static long getLua(EContext* ctx, int ref)
     {
-        return (long)luaL_checkinteger((lua_State*)ctx->GetState(), ref);
+        return (long)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
     static long getJS(EContext* ctx, JSValue value)
     {
         int val;
-        JS_ToInt32((JSContext*)ctx->GetState(), &val, value);
+        JS_ToInt32((JSContext*)(ctx->GetState()), &val, value);
         return (long)val;
     }
 
@@ -288,23 +288,23 @@ struct Stack<unsigned long>
 {
     static void pushLua(EContext* ctx, unsigned long value)
     {
-        lua_pushinteger((lua_State*)ctx->GetState(), (lua_Integer)value);
+        lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
     }
 
     static JSValue pushJS(EContext* ctx, unsigned long value)
     {
-        return JS_NewUint32((JSContext*)ctx->GetState(), value);
+        return JS_NewUint32((JSContext*)(ctx->GetState()), value);
     }
 
     static unsigned long getLua(EContext* ctx, int ref)
     {
-        return (unsigned long)luaL_checkinteger((lua_State*)ctx->GetState(), ref);
+        return (unsigned long)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
     static unsigned long getJS(EContext* ctx, JSValue value)
     {
         unsigned int val;
-        JS_ToUint32((JSContext*)ctx->GetState(), &val, value);
+        JS_ToUint32((JSContext*)(ctx->GetState()), &val, value);
         return (unsigned long)val;
     }
 
@@ -324,23 +324,23 @@ struct Stack<long long>
 {
     static void pushLua(EContext* ctx, long long value)
     {
-        lua_pushinteger((lua_State*)ctx->GetState(), (lua_Integer)value);
+        lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
     }
 
     static JSValue pushJS(EContext* ctx, long long value)
     {
-        return JS_NewInt64((JSContext*)ctx->GetState(), value);
+        return JS_NewInt64((JSContext*)(ctx->GetState()), value);
     }
 
     static long long getLua(EContext* ctx, int ref)
     {
-        return (long long)luaL_checkinteger((lua_State*)ctx->GetState(), ref);
+        return (long long)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
     static long long getJS(EContext* ctx, JSValue value)
     {
         int64_t val;
-        JS_ToInt64((JSContext*)ctx->GetState(), &val, value);
+        JS_ToInt64((JSContext*)(ctx->GetState()), &val, value);
         return (long long)val;
     }
 
@@ -360,23 +360,23 @@ struct Stack<unsigned long long>
 {
     static void pushLua(EContext* ctx, unsigned long long value)
     {
-        lua_pushinteger((lua_State*)ctx->GetState(), (lua_Integer)value);
+        lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
     }
 
     static JSValue pushJS(EContext* ctx, unsigned long long value)
     {
-        return JS_NewBigUint64((JSContext*)ctx->GetState(), value);
+        return JS_NewBigUint64((JSContext*)(ctx->GetState()), value);
     }
 
     static unsigned long long getLua(EContext* ctx, int ref)
     {
-        return (unsigned long long)luaL_checkinteger((lua_State*)ctx->GetState(), ref);
+        return (unsigned long long)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
     static unsigned long long getJS(EContext* ctx, JSValue value)
     {
         uint64_t val;
-        JS_ToBigUint64((JSContext*)ctx->GetState(), &val, value);
+        JS_ToBigUint64((JSContext*)(ctx->GetState()), &val, value);
         return (unsigned long long)val;
     }
 
@@ -396,29 +396,29 @@ struct Stack<float>
 {
     static void pushLua(EContext* ctx, float value)
     {
-        lua_pushnumber((lua_State*)ctx->GetState(), (lua_Number)value);
+        lua_pushnumber((lua_State*)(ctx->GetState()), (lua_Number)value);
     }
 
     static JSValue pushJS(EContext* ctx, float value)
     {
-        return JS_NewFloat64((JSContext*)ctx->GetState(), (double)value);
+        return JS_NewFloat64((JSContext*)(ctx->GetState()), (double)value);
     }
 
     static float getLua(EContext* ctx, int ref)
     {
-        return (float)luaL_checknumber((lua_State*)ctx->GetState(), ref);
+        return (float)luaL_checknumber((lua_State*)(ctx->GetState()), ref);
     }
 
     static float getJS(EContext* ctx, JSValue value)
     {
         double val;
-        JS_ToFloat64((JSContext*)ctx->GetState(), &val, value);
+        JS_ToFloat64((JSContext*)(ctx->GetState()), &val, value);
         return (float)val;
     }
 
     static bool isLuaInstance(EContext* ctx, int ref)
     {
-        return lua_type((lua_State*)ctx->GetState(), ref) == LUA_TNUMBER;
+        return lua_type((lua_State*)(ctx->GetState()), ref) == LUA_TNUMBER;
     }
 
     static bool isJSInstance(EContext* ctx, JSValue value)
@@ -432,29 +432,29 @@ struct Stack<double>
 {
     static void pushLua(EContext* ctx, double value)
     {
-        lua_pushnumber((lua_State*)ctx->GetState(), (lua_Number)value);
+        lua_pushnumber((lua_State*)(ctx->GetState()), (lua_Number)value);
     }
 
     static JSValue pushJS(EContext* ctx, double value)
     {
-        return JS_NewFloat64((JSContext*)ctx->GetState(), value);
+        return JS_NewFloat64((JSContext*)(ctx->GetState()), value);
     }
 
     static float getLua(EContext* ctx, int ref)
     {
-        return (double)luaL_checknumber((lua_State*)ctx->GetState(), ref);
+        return (double)luaL_checknumber((lua_State*)(ctx->GetState()), ref);
     }
 
     static double getJS(EContext* ctx, JSValue value)
     {
         double val;
-        JS_ToFloat64((JSContext*)ctx->GetState(), &val, value);
+        JS_ToFloat64((JSContext*)(ctx->GetState()), &val, value);
         return val;
     }
 
     static bool isLuaInstance(EContext* ctx, int ref)
     {
-        return lua_type((lua_State*)ctx->GetState(), ref) == LUA_TNUMBER;
+        return lua_type((lua_State*)(ctx->GetState()), ref) == LUA_TNUMBER;
     }
 
     static bool isJSInstance(EContext* ctx, JSValue value)
@@ -468,27 +468,27 @@ struct Stack<bool>
 {
     static void pushLua(EContext* ctx, bool value)
     {
-        lua_pushboolean((lua_State*)ctx->GetState(), int(value));
+        lua_pushboolean((lua_State*)(ctx->GetState()), int(value));
     }
 
     static JSValue pushJS(EContext* ctx, bool value)
     {
-        return JS_NewBool((JSContext*)ctx->GetState(), value);
+        return JS_NewBool((JSContext*)(ctx->GetState()), value);
     }
 
     static bool getLua(EContext* ctx, int ref)
     {
-        return (lua_toboolean((lua_State*)ctx->GetState(), ref) == 1);
+        return (lua_toboolean((lua_State*)(ctx->GetState()), ref) == 1);
     }
 
     static bool getJS(EContext* ctx, JSValue value)
     {
-        return JS_ToBool((JSContext*)ctx->GetState(), value) == 1;
+        return JS_ToBool((JSContext*)(ctx->GetState()), value) == 1;
     }
 
     static bool isLuaInstance(EContext* ctx, int ref)
     {
-        return lua_type((lua_State*)ctx->GetState(), ref) == LUA_TBOOLEAN;
+        return lua_type((lua_State*)(ctx->GetState()), ref) == LUA_TBOOLEAN;
     }
 
     static bool isJSInstance(EContext* ctx, JSValue value)
@@ -502,32 +502,32 @@ struct Stack<char>
 {
     static void pushLua(EContext* ctx, char value)
     {
-        lua_pushlstring((lua_State*)ctx->GetState(), &value, 1);
+        lua_pushlstring((lua_State*)(ctx->GetState()), &value, 1);
     }
 
     static JSValue pushJS(EContext* ctx, char value)
     {
-        return JS_NewStringLen((JSContext*)ctx->GetState(), &value, 1);
+        return JS_NewStringLen((JSContext*)(ctx->GetState()), &value, 1);
     }
 
     static char getLua(EContext* ctx, int ref)
     {
-        return luaL_checkstring((lua_State*)ctx->GetState(), ref)[0];
+        return luaL_checkstring((lua_State*)(ctx->GetState()), ref)[0];
     }
 
     static char getJS(EContext* ctx, JSValue value)
     {
         size_t len;
-        auto val = JS_ToCStringLen((JSContext*)ctx->GetState(), &len, value);
+        auto val = JS_ToCStringLen((JSContext*)(ctx->GetState()), &len, value);
         char out = '\0';
         if(len != 0) out = (char)(val[0]);
-        JS_FreeCString((JSContext*)ctx->GetState(), val);
+        JS_FreeCString((JSContext*)(ctx->GetState()), val);
         return out;
     }
 
     static bool isLuaInstance(EContext* ctx, int ref)
     {
-        return lua_type((lua_State*)ctx->GetState(), ref) == LUA_TBOOLEAN;
+        return lua_type((lua_State*)(ctx->GetState()), ref) == LUA_TBOOLEAN;
     }
 
     static bool isJSInstance(EContext* ctx, JSValue value)
@@ -541,18 +541,18 @@ struct Stack<char const*>
 {
     static void pushLua(EContext* ctx, char const* value)
     {
-        if(value) lua_pushstring((lua_State*)ctx->GetState(), value);
-        else lua_pushnil((lua_State*)ctx->GetState());
+        if(value) lua_pushstring((lua_State*)(ctx->GetState()), value);
+        else lua_pushnil((lua_State*)(ctx->GetState()));
     }
 
     static JSValue pushJS(EContext* ctx, char const* value)
     {
-        return JS_NewString((JSContext*)ctx->GetState(), value);
+        return JS_NewString((JSContext*)(ctx->GetState()), value);
     }
 
     static char const* getLua(EContext* ctx, int ref)
     {
-        return lua_isnil((lua_State*)ctx->GetState(), ref) ? nullptr : luaL_checkstring((lua_State*)ctx->GetState(), ref);
+        return lua_isnil((lua_State*)(ctx->GetState()), ref) ? nullptr : luaL_checkstring((lua_State*)(ctx->GetState()), ref);
     }
 
     static char const* getJS(EContext* ctx, JSValue value)
@@ -563,7 +563,7 @@ struct Stack<char const*>
 
     static bool isLuaInstance(EContext* ctx, int ref)
     {
-        return lua_type((lua_State*)ctx->GetState(), ref) == LUA_TSTRING;
+        return lua_type((lua_State*)(ctx->GetState()), ref) == LUA_TSTRING;
     }
 
     static bool isJSInstance(EContext* ctx, JSValue value)
@@ -577,23 +577,23 @@ struct Stack<std::string>
 {
     static void pushLua(EContext* ctx, std::string value)
     {
-        lua_pushlstring((lua_State*)ctx->GetState(), value.data(), value.size());
+        lua_pushlstring((lua_State*)(ctx->GetState()), value.data(), value.size());
     }
 
     static JSValue pushJS(EContext* ctx, std::string value)
     {
-        return JS_NewStringLen((JSContext*)ctx->GetState(), value.data(), value.size());
+        return JS_NewStringLen((JSContext*)(ctx->GetState()), value.data(), value.size());
     }
 
     static std::string getLua(EContext* ctx, int ref)
     {
         size_t len;
-        if(lua_type((lua_State*)ctx->GetState(), ref) == LUA_TSTRING) {
-            const char* str = lua_tolstring((lua_State*)ctx->GetState(), ref, &len);
+        if(lua_type((lua_State*)(ctx->GetState()), ref) == LUA_TSTRING) {
+            const char* str = lua_tolstring((lua_State*)(ctx->GetState()), ref, &len);
             return std::string(str, len);
         }
 
-        lua_State* L = (lua_State*)ctx->GetState();
+        lua_State* L = (lua_State*)(ctx->GetState());
 
         lua_pushvalue(L, ref);
         const char* str = lua_tolstring(L, -1, &len);
@@ -605,15 +605,15 @@ struct Stack<std::string>
     static std::string getJS(EContext* ctx, JSValue value)
     {
         size_t len;
-        const char* str = JS_ToCStringLen((JSContext*)ctx->GetState(), &len, value);
+        const char* str = JS_ToCStringLen((JSContext*)(ctx->GetState()), &len, value);
         std::string s(str, len);
-        JS_FreeCString((JSContext*)ctx->GetState(), str);
+        JS_FreeCString((JSContext*)(ctx->GetState()), str);
         return s;
     }
 
     static bool isLuaInstance(EContext* ctx, int ref)
     {
-        return lua_type((lua_State*)ctx->GetState(), ref) == LUA_TSTRING;
+        return lua_type((lua_State*)(ctx->GetState()), ref) == LUA_TSTRING;
     }
 
     static bool isJSInstance(EContext* ctx, JSValue value)
@@ -649,7 +649,7 @@ struct Stack<std::optional<T>>
         return Stack<T>::getLua(ctx, ref);
     }
 
-    static std::string getJS(EContext* ctx, JSValue value)
+    static std::optional<T> getJS(EContext* ctx, JSValue value)
     {
         if(Stack<nullptr_t>::isJSInstance(ctx, value)) return std::nullopt;
         return Stack<T>::getJS(ctx, value);
@@ -657,7 +657,7 @@ struct Stack<std::optional<T>>
 
     static bool isLuaInstance(EContext* ctx, int ref)
     {
-        return lua_isnil((lua_State*)ctx->GetState(), ref) || Stack<T>::isLuaInstance(ctx, ref);
+        return lua_isnil((lua_State*)(ctx->GetState()), ref) || Stack<T>::isLuaInstance(ctx, ref);
     }
 
     static bool isJSInstance(EContext* ctx, JSValue value)
@@ -671,7 +671,7 @@ struct Stack<std::vector<T>>
 {
     static void pushLua(EContext* ctx, std::vector<T> value)
     {
-        lua_State* L = (lua_State*)ctx->GetState();
+        lua_State* L = (lua_State*)(ctx->GetState());
 
         lua_createtable(L, (int)(value.size()), 0);
         for(size_t i = 0; i < value.size(); i++) {
@@ -683,11 +683,11 @@ struct Stack<std::vector<T>>
 
     static JSValue pushJS(EContext* ctx, std::vector<T> value)
     {
-        JSContext* ctx = (JSContext*)ctx->GetState();
-        JSValue arr = JS_NewArray(ctx);
+        JSContext* ct = (JSContext*)(ctx->GetState());
+        JSValue arr = JS_NewArray(ct);
 
         for(size_t i = 0; i < value.size(); i++) {
-            JS_SetPropertyUint32(ctx, arr, i, Stack<T>::pushJS(ctx, value[i]));
+            JS_SetPropertyUint32(ct, arr, i, Stack<T>::pushJS(ctx, value[i]));
         }
 
         return arr;
@@ -697,7 +697,7 @@ struct Stack<std::vector<T>>
     {
         std::vector<T> v;
 
-        lua_State* L = (lua_State*)ctx->GetState();
+        lua_State* L = (lua_State*)(ctx->GetState());
         if(!lua_istable(L, ref)) return v;
 
         v.reserve((std::size_t)(get_length(L, ref)));
@@ -716,7 +716,7 @@ struct Stack<std::vector<T>>
     {
         std::vector<T> v;
 
-        JSContext* L = (JSContext*)ctx->GetState();
+        JSContext* L = (JSContext*)(ctx->GetState());
         if(!JS_IsArray(L, value)) return v;
 
         uint32_t len;
@@ -736,12 +736,12 @@ struct Stack<std::vector<T>>
 
     static bool isLuaInstance(EContext* ctx, int ref)
     {
-        return lua_istable((lua_State*)ctx->GetState(), ref);
+        return lua_istable((lua_State*)(ctx->GetState()), ref);
     }
 
     static bool isJSInstance(EContext* ctx, JSValue value)
     {
-        return JS_IsArray((JSContext*)ctx->GetState(), value);
+        return JS_IsArray((JSContext*)(ctx->GetState()), value);
     }
 };
 
@@ -750,7 +750,7 @@ struct Stack<std::list<T>>
 {
     static void pushLua(EContext* ctx, std::list<T> value)
     {
-        lua_State* L = (lua_State*)ctx->GetState();
+        lua_State* L = (lua_State*)(ctx->GetState());
 
         lua_createtable(L, (int)(value.size()), 0);
         typename std::list<T>::const_iterator item = value.begin();
@@ -765,12 +765,12 @@ struct Stack<std::list<T>>
 
     static JSValue pushJS(EContext* ctx, std::list<T> value)
     {
-        JSContext* ctx = (JSContext*)ctx->GetState();
-        JSValue arr = JS_NewArray(ctx);
+        JSContext* ct = (JSContext*)(ctx->GetState());
+        JSValue arr = JS_NewArray(ct);
 
         typename std::list<T>::const_iterator item = value.begin();
         for(size_t i = 0; i < value.size(); i++) {
-            JS_SetPropertyUint32(ctx, arr, i, Stack<T>::pushJS(ctx, *item));
+            JS_SetPropertyUint32(ct, arr, i, Stack<T>::pushJS(ctx, *item));
             ++item;
         }
 
@@ -781,7 +781,7 @@ struct Stack<std::list<T>>
     {
         std::list<T> v;
 
-        lua_State* L = (lua_State*)ctx->GetState();
+        lua_State* L = (lua_State*)(ctx->GetState());
         if(!lua_istable(L, ref)) return v;
 
         int absidx = lua_absindex(L, ref);
@@ -798,7 +798,7 @@ struct Stack<std::list<T>>
     {
         std::list<T> v;
 
-        JSContext* L = (JSContext*)ctx->GetState();
+        JSContext* L = (JSContext*)(ctx->GetState());
         if(!JS_IsArray(L, value)) return v;
 
         uint32_t len;
@@ -816,12 +816,12 @@ struct Stack<std::list<T>>
 
     static bool isLuaInstance(EContext* ctx, int ref)
     {
-        return lua_istable((lua_State*)ctx->GetState(), ref);
+        return lua_istable((lua_State*)(ctx->GetState()), ref);
     }
 
     static bool isJSInstance(EContext* ctx, JSValue value)
     {
-        return JS_IsArray((JSContext*)ctx->GetState(), value);
+        return JS_IsArray((JSContext*)(ctx->GetState()), value);
     }
 };
 
@@ -830,7 +830,7 @@ struct Stack<std::array<T, s>>
 {
     static void pushLua(EContext* ctx, std::array<T, s> value)
     {
-        lua_State* L = (lua_State*)ctx->GetState();
+        lua_State* L = (lua_State*)(ctx->GetState());
 
         lua_createtable(L, (int)(s), 0);
 
@@ -843,11 +843,11 @@ struct Stack<std::array<T, s>>
 
     static JSValue pushJS(EContext* ctx, std::array<T, s> value)
     {
-        JSContext* ctx = (JSContext*)ctx->GetState();
-        JSValue arr = JS_NewArray(ctx);
+        JSContext* ct = (JSContext*)(ctx->GetState());
+        JSValue arr = JS_NewArray(ct);
 
         for(size_t i = 0; i < s; i++) {
-            JS_SetPropertyUint32(ctx, arr, i, Stack<T>::pushJS(ctx, value[i]));
+            JS_SetPropertyUint32(ct, arr, i, Stack<T>::pushJS(ctx, value[i]));
         }
 
         return arr;
@@ -857,7 +857,7 @@ struct Stack<std::array<T, s>>
     {
         std::array<T, s> v;
 
-        lua_State* L = (lua_State*)ctx->GetState();
+        lua_State* L = (lua_State*)(ctx->GetState());
         if(!lua_istable(L, ref)) return v;
         if(get_length(L, ref) != s) return v;
 
@@ -877,7 +877,7 @@ struct Stack<std::array<T, s>>
     {
         std::array<T, s> v;
 
-        JSContext* L = (JSContext*)ctx->GetState();
+        JSContext* L = (JSContext*)(ctx->GetState());
         if(!JS_IsArray(L, value)) return v;
 
         uint32_t len;
@@ -897,16 +897,16 @@ struct Stack<std::array<T, s>>
 
     static bool isLuaInstance(EContext* ctx, int ref)
     {
-        return lua_istable((lua_State*)ctx->GetState(), ref) && get_length((lua_State*)ctx->GetState(), ref) == s;
+        return lua_istable((lua_State*)(ctx->GetState()), ref) && get_length((lua_State*)(ctx->GetState()), ref) == s;
     }
 
     static bool isJSInstance(EContext* ctx, JSValue value)
     {
-        if(!JS_IsArray((JSContext*)ctx->GetState(), value)) return false;
+        if(!JS_IsArray((JSContext*)(ctx->GetState()), value)) return false;
 
         uint32_t len;
-        JS_GetPropertyStr((JSContext*)ctx->GetState(), value, "length");
-        JS_ToUint32((JSContext*)ctx->GetState(), &len, value);
+        JS_GetPropertyStr((JSContext*)(ctx->GetState()), value, "length");
+        JS_ToUint32((JSContext*)(ctx->GetState()), &len, value);
         
         return len == s;
     }
@@ -919,7 +919,7 @@ struct Stack<std::map<K, V>>
 
     static void pushLua(EContext* ctx, M value)
     {
-        lua_State* L = (lua_State*)ctx->GetState();
+        lua_State* L = (lua_State*)(ctx->GetState());
 
         lua_createtable(L, (int)(value.size()), 0);
         typedef typename M::const_iterator ConstIter;
@@ -934,13 +934,13 @@ struct Stack<std::map<K, V>>
 
     static JSValue pushJS(EContext* ctx, M value)
     {
-        JSContext* ctx = (JSContext*)ctx->GetState();
-        JSValue arr = JS_NewArray(ctx);
+        JSContext* ct = (JSContext*)(ctx->GetState());
+        JSValue arr = JS_NewArray(ct);
 
         typedef typename M::const_iterator ConstIter;
 
         for(ConstIter it = value.begin(); it != value.end(); ++it)
-            JS_SetProperty(ctx, arr, Stack<K>::pushJS(ctx, it->first), Stack<V>::pushJS(ctx, it->second));
+            JS_SetProperty(ct, arr, Stack<K>::pushJS(ctx, it->first), Stack<V>::pushJS(ctx, it->second));
 
         return arr;
     }
@@ -949,7 +949,7 @@ struct Stack<std::map<K, V>>
     {
         M v;
 
-        lua_State* L = (lua_State*)ctx->GetState();
+        lua_State* L = (lua_State*)(ctx->GetState());
         if(!lua_istable(L, ref)) return v;
 
         int absidx = lua_absindex(L, ref);
@@ -966,8 +966,8 @@ struct Stack<std::map<K, V>>
     {
         M v;
 
-        JSContext* L = (JSContext*)ctx->GetState();
-        if(!JS_IsObject(L, value)) return v;
+        JSContext* L = (JSContext*)(ctx->GetState());
+        if(!JS_IsObject(value)) return v;
 
         JSPropertyEnum* properties;
         uint32_t propCount;
@@ -982,8 +982,8 @@ struct Stack<std::map<K, V>>
 
             v.emplace(Stack<K>::getJS(ctx, propVal), Stack<V>::getJS(ctx, property));
 
-            JS_FreeValue(propVal);
-            JS_FreeValue(property);
+            JS_FreeValue(L, propVal);
+            JS_FreeValue(L, property);
         }
 
         return v;
@@ -991,12 +991,12 @@ struct Stack<std::map<K, V>>
 
     static bool isLuaInstance(EContext* ctx, int ref)
     {
-        return lua_istable((lua_State*)ctx->GetState(), ref);
+        return lua_istable((lua_State*)(ctx->GetState()), ref);
     }
 
     static bool isJSInstance(EContext* ctx, JSValue value)
     {
-        return JS_IsObject((JSContext*)ctx->GetState(), value);
+        return JS_IsObject(value);
     }
 };
 
@@ -1007,7 +1007,7 @@ struct Stack<std::unordered_map<K, V>>
 
     static void pushLua(EContext* ctx, M value)
     {
-        lua_State* L = (lua_State*)ctx->GetState();
+        lua_State* L = (lua_State*)(ctx->GetState());
 
         lua_createtable(L, (int)(value.size()), 0);
         typedef typename M::const_iterator ConstIter;
@@ -1022,13 +1022,13 @@ struct Stack<std::unordered_map<K, V>>
 
     static JSValue pushJS(EContext* ctx, M value)
     {
-        JSContext* ctx = (JSContext*)ctx->GetState();
-        JSValue arr = JS_NewArray(ctx);
+        JSContext* ct = (JSContext*)(ctx->GetState());
+        JSValue arr = JS_NewArray(ct);
 
         typedef typename M::const_iterator ConstIter;
 
         for(ConstIter it = value.begin(); it != value.end(); ++it)
-            JS_SetProperty(ctx, arr, Stack<K>::pushJS(ctx, it->first), Stack<V>::pushJS(ctx, it->second));
+            JS_SetProperty(ct, arr, Stack<K>::pushJS(ctx, it->first), Stack<V>::pushJS(ctx, it->second));
 
         return arr;
     }
@@ -1037,7 +1037,7 @@ struct Stack<std::unordered_map<K, V>>
     {
         M v;
 
-        lua_State* L = (lua_State*)ctx->GetState();
+        lua_State* L = (lua_State*)(ctx->GetState());
         if(!lua_istable(L, ref)) return v;
 
         int absidx = lua_absindex(L, ref);
@@ -1054,8 +1054,8 @@ struct Stack<std::unordered_map<K, V>>
     {
         M v;
 
-        JSContext* L = (JSContext*)ctx->GetState();
-        if(!JS_IsObject(L, value)) return v;
+        JSContext* L = (JSContext*)(ctx->GetState());
+        if(!JS_IsObject(value)) return v;
 
         JSPropertyEnum* properties;
         uint32_t propCount;
@@ -1070,8 +1070,8 @@ struct Stack<std::unordered_map<K, V>>
 
             v.emplace(Stack<K>::getJS(ctx, propVal), Stack<V>::getJS(ctx, property));
 
-            JS_FreeValue(propVal);
-            JS_FreeValue(property);
+            JS_FreeValue(L, propVal);
+            JS_FreeValue(L, property);
         }
 
         return v;
@@ -1079,12 +1079,12 @@ struct Stack<std::unordered_map<K, V>>
 
     static bool isLuaInstance(EContext* ctx, int ref)
     {
-        return lua_istable((lua_State*)ctx->GetState(), ref);
+        return lua_istable((lua_State*)(ctx->GetState()), ref);
     }
 
     static bool isJSInstance(EContext* ctx, JSValue value)
     {
-        return JS_IsObject((JSContext*)ctx->GetState(), value);
+        return JS_IsObject(value);
     }
 };
 
@@ -1093,7 +1093,7 @@ struct Stack<std::pair<T1, T2>>
 {
     static void pushLua(EContext* ctx, std::pair<T1, T2> value)
     {
-        lua_State* L = (lua_State*)ctx->GetState();
+        lua_State* L = (lua_State*)(ctx->GetState());
 
         lua_createtable(L, 2, 0);
         lua_pushinteger(L, (lua_Integer)1);
@@ -1106,11 +1106,11 @@ struct Stack<std::pair<T1, T2>>
 
     static JSValue pushJS(EContext* ctx, std::pair<T1, T2> value)
     {
-        JSContext* ctx = (JSContext*)ctx->GetState();
-        JSValue arr = JS_NewArray(ctx);
+        JSContext* ct = (JSContext*)(ctx->GetState());
+        JSValue arr = JS_NewArray(ct);
 
-        JS_SetPropertyUint32(ctx, arr, 0, Stack<T1>::pushJS(ctx, value.first));
-        JS_SetPropertyUint32(ctx, arr, 1, Stack<T2>::pushJS(ctx, value.second));
+        JS_SetPropertyUint32(ct, arr, 0, Stack<T1>::pushJS(ctx, value.first));
+        JS_SetPropertyUint32(ct, arr, 1, Stack<T2>::pushJS(ctx, value.second));
 
         return arr;
     }
@@ -1119,7 +1119,7 @@ struct Stack<std::pair<T1, T2>>
     {
         std::pair<T1,T2> v;
 
-        lua_State* L = (lua_State*)ctx->GetState();
+        lua_State* L = (lua_State*)(ctx->GetState());
         if(!lua_istable(L, ref)) return v;
         if(get_length(L, ref) != 2) return v;
 
@@ -1141,11 +1141,11 @@ struct Stack<std::pair<T1, T2>>
         return v;
     }
 
-    static std::vector<T> getJS(EContext* ctx, JSValue value)
+    static std::pair<T1, T2> getJS(EContext* ctx, JSValue value)
     {
         std::pair<T1,T2> v;
 
-        JSContext* L = (JSContext*)ctx->GetState();
+        JSContext* L = (JSContext*)(ctx->GetState());
         if(!JS_IsArray(L, value)) return v;
 
         uint32_t len;
@@ -1166,16 +1166,16 @@ struct Stack<std::pair<T1, T2>>
 
     static bool isLuaInstance(EContext* ctx, int ref)
     {
-        return lua_istable((lua_State*)ctx->GetState(), ref) && get_length((lua_State*)ctx->GetState(), ref) == 2;
+        return lua_istable((lua_State*)(ctx->GetState()), ref) && get_length((lua_State*)(ctx->GetState()), ref) == 2;
     }
 
     static bool isJSInstance(EContext* ctx, JSValue value)
     {
-        if(!JS_IsArray((JSContext*)ctx->GetState(), value)) return false;
+        if(!JS_IsArray((JSContext*)(ctx->GetState()), value)) return false;
 
         uint32_t len;
-        JS_GetPropertyStr((JSContext*)ctx->GetState(), value, "length");
-        JS_ToUint32((JSContext*)ctx->GetState(), &len, value);
+        JS_GetPropertyStr((JSContext*)(ctx->GetState()), value, "length");
+        JS_ToUint32((JSContext*)(ctx->GetState()), &len, value);
         return len == 2;
     }
 };

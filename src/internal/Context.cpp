@@ -1,4 +1,9 @@
 #include "Context.h"
+#include "CHelpers.h"
+
+#include <set>
+
+std::set<EContext*> ctxs;
 
 static const luaL_Reg lualibs[] = {
     {"_G", luaopen_base},
@@ -25,20 +30,29 @@ EContext::EContext(ContextKinds kind)
         for (; lib->func; lib++) RegisterLuaLib(lib->name, lib->func);
     } else if(kind == ContextKinds::JavaScript) {
         JSRuntime* rt = JS_NewRuntime();
-
-        JS_SetMemoryLimit(rt, 80 * 1024);
-        JS_SetMaxStackSize(rt, 10 * 1024);
-
         JSContext* ctx = JS_NewContext(rt);
+
+        JSValue global_obj = JS_GetGlobalObject(ctx);
+        JSValue console_obj = JS_NewObject(ctx);
+
+        JS_SetPropertyStr(ctx, console_obj, "log",
+            JS_NewCFunction(ctx, CHelpers::js_print_to_console, "log", 1));
+        JS_SetPropertyStr(ctx, global_obj, "console", console_obj);
+
+        JS_FreeValue(ctx, global_obj);   
 
         m_state = (void*)ctx;
     }
 
     EException::Enable(m_state, m_kind);
+
+    ctxs.insert(this);
 }
 
 EContext::~EContext()
 {
+    ctxs.erase(this);
+
     if(m_kind == ContextKinds::Lua) {
         lua_close((lua_State*)m_state);
     } else if(m_kind == ContextKinds::JavaScript) {
@@ -72,10 +86,44 @@ int64_t EContext::GetMemoryUsage()
         JSMemoryUsage stats;
         JS_ComputeMemoryUsage(JS_GetRuntime((JSContext*)m_state), &stats);
         return stats.memory_used_size;
-    }
+    } else return 0;
+}
+
+int EContext::RunCode(std::string code)
+{
+    if(m_kind == ContextKinds::Lua) {
+        return luaL_dostring((lua_State*)m_state, code.c_str());
+    } else if(m_kind == ContextKinds::JavaScript) {
+        auto res = JS_Eval((JSContext*)m_state, code.c_str(), code.length(), "runcode.js", JS_EVAL_TYPE_GLOBAL);
+        bool isException = JS_IsException(res);
+        JS_FreeValue((JSContext*)m_state, res);
+        return (int)isException;
+    } else return 0;
 }
 
 void* EContext::GetState()
 {
     return m_state;
+}
+
+EContext* GetContextByState(JSContext* ctx)
+{
+    for(auto it = ctxs.begin(); it != ctxs.end(); ++it)
+    {
+        EContext* ct = *it;
+        if(ct->GetState() == ctx)
+            return ct;
+    }
+    return nullptr;
+}
+
+EContext* GetContextByState(lua_State* ctx)
+{
+    for(auto it = ctxs.begin(); it != ctxs.end(); ++it)
+    {
+        EContext* ct = *it;
+        if(ct->GetState() == ctx)
+            return ct;
+    }
+    return nullptr;
 }

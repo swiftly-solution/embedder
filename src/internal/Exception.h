@@ -58,7 +58,18 @@ protected:
                     std::string str(tmp, strlen(tmp));
                     m_what = str;
                     JS_FreeCString((JSContext*)m_ctx, tmp);
+                } else if(JS_IsError((JSContext*)m_ctx, exc)) {
+                    JSValue stack = JS_GetPropertyStr((JSContext*)m_ctx, exc, "stack");
+                    
+                    const char* tmp = JS_ToCString((JSContext*)m_ctx, exc);
+                    std::string str(tmp, strlen(tmp));
+                    m_what = str;
+                    JS_FreeCString((JSContext*)m_ctx, tmp);
+
+                    JS_FreeValue((JSContext*)m_ctx, stack);
                 } else m_what = "Empty error or invalid value.";
+
+                JS_FreeValue((JSContext*)m_ctx, exc);
             }
         }
     }
