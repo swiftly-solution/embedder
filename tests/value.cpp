@@ -1,11 +1,6 @@
 #include "catch_amalgamated.hpp"
 #include "../src/Embedder.h"
 
-/************************************************
- * ISSUE: 
- *     - When casting to values all of them are 0.
- *     - Also returning EValues seems to be broken.
- ************************************************/
 EValue returnValue(EValue val1, EValue val2, EValue callback) {
     callback(val1, val2);
 
