@@ -9,6 +9,7 @@
 
 #include "Context.h"
 #include "CHelpers.h"
+#include "Value.h"
 
 class Namespace
 {

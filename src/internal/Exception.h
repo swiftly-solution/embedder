@@ -8,6 +8,7 @@
 #include <quickjs.h>
 
 #include "../ContextKinds.h"
+#include "Context.h"
 
 class EException: public std::exception
 {
@@ -37,6 +38,14 @@ public:
     static void Enable(void* ctx, ContextKinds kind) {
         if(kind == ContextKinds::Lua) {
             lua_atpanic((lua_State*)ctx, thrower);
+        }
+    }
+
+    static void pcall(EContext* ctx, int args, int results)
+    {
+        if(ctx->GetKind() == ContextKinds::Lua) {
+            int code = lua_pcall((lua_State*)ctx->GetState(), args, results, 0);
+            if(code != LUA_OK) Throw(EException(ctx->GetState(), ctx->GetKind(), code));
         }
     }
 

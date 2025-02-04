@@ -52,7 +52,7 @@ public:
         size_t len;
     
         for (i = 0; i < argc; i++) {
-            if (i != 0) fputc(' ', stdout);
+            if (i != 0) fputc('\t', stdout);
             str = JS_ToCStringLen(ctx, &len, argv[i]);
             if (!str) return JS_EXCEPTION;
             fwrite(str, 1, len, stdout);

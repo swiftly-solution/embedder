@@ -1,18 +1,24 @@
 #ifndef _embedding_internal_context_h
 #define _embedding_internal_context_h
 
+#include <set>
+#include <string>
+
 #include <lua.hpp>
 #include <quickjs.h>
 
 #include "../Config.h"
 #include "../ContextKinds.h"
-#include "Exception.h"
+
+class EValue;
 
 class EContext
 {
 private:
     void* m_state;
     ContextKinds m_kind;
+    std::set<EValue*> mappedValues;
+
 public:
     EContext(ContextKinds kind);
     ~EContext();
@@ -24,6 +30,9 @@ public:
     void* GetState();
 
     int RunCode(std::string code);
+
+    void PushValue(EValue* val);
+    void PopValue(EValue* val);
 };
 
 EContext* GetContextByState(JSContext* ctx);

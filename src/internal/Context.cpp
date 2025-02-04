@@ -1,5 +1,7 @@
 #include "Context.h"
 #include "CHelpers.h"
+#include "Exception.h"
+#include "Value.h"
 
 #include <set>
 
@@ -53,6 +55,11 @@ EContext::~EContext()
 {
     ctxs.erase(this);
 
+    for(auto it = mappedValues.begin(); it != mappedValues.end(); ++it)
+        delete (*it);
+
+    mappedValues.clear();
+
     if(m_kind == ContextKinds::Lua) {
         lua_close((lua_State*)m_state);
     } else if(m_kind == ContextKinds::JavaScript) {
@@ -99,6 +106,18 @@ int EContext::RunCode(std::string code)
         JS_FreeValue((JSContext*)m_state, res);
         return (int)isException;
     } else return 0;
+}
+
+void EContext::PushValue(EValue* val)
+{
+    if(mappedValues.find(val) != mappedValues.end()) return;
+    mappedValues.insert(val);
+}
+
+void EContext::PopValue(EValue* val)
+{
+    if(mappedValues.find(val) == mappedValues.end()) return;
+    mappedValues.erase(val);
 }
 
 void* EContext::GetState()

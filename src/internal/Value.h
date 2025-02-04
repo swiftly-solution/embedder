@@ -1,0 +1,270 @@
+#ifndef _embedder_internal_value_h
+#define _embedder_internal_value_h
+
+#include <lua.hpp>
+#include <quickjs.h>
+
+#include "Context.h"
+#include "Exception.h"
+
+class EValue
+{
+private:
+    EContext* m_ctx;
+    int m_ref = LUA_NOREF;
+    JSValue m_val = JS_NULL;
+
+    void swap(EValue& other)
+    {
+        std::swap(m_ctx, other.m_ctx);
+        std::swap(m_ref, other.m_ref);
+        std::swap(m_val, other.m_val);
+    }
+
+public:
+    EValue(EContext* ctx)
+    {
+        m_ctx = ctx;
+        m_ctx->PushValue(this);
+        if(ctx->GetKind() == ContextKinds::Lua) m_ref = LUA_NOREF;
+        else if(ctx->GetKind() == ContextKinds::JavaScript) m_val = JS_NULL;
+    }
+    
+    template<class T>
+    EValue(EContext* ctx, T value)
+    {
+        m_ctx = ctx;
+        m_ctx->PushValue(this);
+        if(ctx->GetKind() == ContextKinds::Lua) {
+            Stack<T>::pushLua(ctx, value);
+            m_ref = luaL_ref((lua_State*)ctx->GetState(), LUA_REGISTRYINDEX);
+        } else if(ctx->GetKind() == ContextKinds::JavaScript) {
+            m_val = Stack<T>::pushJS(ctx, value);
+        }
+    }
+
+    EValue(EContext* ctx, int indexStack, bool pushIndexStack)
+    {
+        (void)pushIndexStack;
+        m_ctx = ctx;
+        m_ctx->PushValue(this);
+        if(ctx->GetKind() == ContextKinds::Lua) {
+            if(indexStack != 0) lua_pushvalue((lua_State*)ctx->GetState(), indexStack);
+            m_ref = luaL_ref((lua_State*)ctx->GetState(), LUA_REGISTRYINDEX);
+        } else if(ctx->GetKind() == ContextKinds::JavaScript) {}
+    }
+
+    EValue(EContext* ctx, JSValue value)
+    {
+        m_ctx = ctx;
+        m_ctx->PushValue(this);
+        if(ctx->GetKind() == ContextKinds::Lua) {} 
+        else if(ctx->GetKind() == ContextKinds::JavaScript) {
+            m_val = JS_DupValue((JSContext*)ctx->GetState(), value);
+        }
+    }
+
+    ~EValue()
+    {
+        m_ctx->PopValue(this);
+        if(m_ctx->GetKind() == ContextKinds::Lua) {
+            if(m_ref == LUA_NOREF) return;
+            luaL_unref((lua_State*)m_ctx->GetState(), LUA_REGISTRYINDEX, m_ref);
+        } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
+            if(JS_IsNull(m_val)) return;
+            JS_FreeValue((JSContext*)m_ctx->GetState(), m_val);
+        }
+    }
+
+    EValue(EValue& other) : m_ctx(other.m_ctx), m_ref(other.createRef()), m_val(other.createValue()) {}
+
+    int createRef() {
+        if(m_ctx->GetKind() != ContextKinds::Lua) return LUA_NOREF;
+        pushLua();
+        return luaL_ref((lua_State*)m_ctx->GetState(), LUA_REGISTRYINDEX);
+    }
+
+    JSValue createValue() {
+        if(m_ctx->GetKind() != ContextKinds::JavaScript) return JS_NULL;
+        return JS_DupValue((JSContext*)m_ctx->GetState(), m_val);
+    }
+
+    EValue& operator=(EValue& rhs)
+    {
+        EValue val(rhs);
+        swap(val);
+        return *this;
+    }
+
+    template<class T>
+    EValue& operator=(T& rhs)
+    {
+        EValue val(rhs, rhs);
+        swap(val);
+        return *this;
+    }
+
+    void pushLua() {
+        if(m_ctx->GetKind() != ContextKinds::Lua) return;
+        lua_rawgeti((lua_State*)m_ctx->GetState(), LUA_REGISTRYINDEX, m_ref);
+    }
+
+    JSValue pushJS() {
+        if(m_ctx->GetKind() != ContextKinds::JavaScript) return JS_NULL;
+        return m_val;
+    }
+
+    template<class T>
+    bool isInstance()
+    {
+        if(m_ctx->GetKind() == ContextKinds::Lua) {
+            pushLua();
+            bool ans = Stack<T>::isLuaInstance(m_ctx, -1);
+            lua_pop((lua_State*)m_ctx->GetState(), 1);
+            return ans;
+        } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
+            return Stack<T>::isJSInstance(m_ctx, m_val);
+        }
+    }
+
+    template<class T>
+    T cast()
+    {
+        if(m_ctx->GetKind() == ContextKinds::Lua) {
+            pushLua();
+            T val = Stack<T>::getLua(m_ctx, -1);
+            lua_pop((lua_State*)m_ctx->GetState(), 1);
+            return val;
+        } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
+            return Stack<T>::getJS(m_ctx, m_val);
+        } else {
+            return (T)0;
+        }
+    }
+
+    template<class T>
+    T cast_or(T value)
+    {
+        if(!isInstance<T>()) return value;
+        return cast<T>();
+    }
+
+    template<class T>
+    operator T()
+    {
+        return cast<T>();
+    }
+
+    std::string tostring()
+    {
+        if(m_ctx->GetKind() == ContextKinds::Lua) {
+            lua_State* L = (lua_State*)m_ctx->GetState();
+            lua_getglobal(L, "tostring");
+            pushLua();
+            lua_call(L, 1, 1);
+            const char* str = lua_tostring(L, -1);
+            lua_pop(L, 1);
+            return str;
+        } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
+            JSContext* L = (JSContext*)m_ctx->GetState();
+            auto value = JS_ToCString(L, m_val);
+            std::string out(value);
+            JS_FreeCString(L, value);
+            return out;
+        }
+    }
+
+    EContext* getContext()
+    {
+        return m_ctx;
+    }
+
+    static EValue fromLuaStack(EContext* ctx) {
+        EValue newval(ctx, 0, true);
+        return newval;
+    }
+
+    static EValue fromLuaStack(EContext* ctx, int idx) {
+        EValue newval(ctx, idx, true);
+        return newval;
+    }
+
+    static EValue fromJSStack(EContext* ctx, JSValue val) {
+        EValue newval(ctx, val);
+        return newval;
+    }
+
+    template<typename... Params>
+    EValue operator()(Params&&... params)
+    {
+        if(m_ctx->GetKind() == ContextKinds::Lua) {
+            pushLua();
+            pushLuaArguments(std::forward<Params>(params)...);
+            EException::pcall(m_ctx, sizeof...(params), 1);
+            return EValue::fromLuaStack(m_ctx);
+        } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
+            JSContext* state = (JSContext*)m_ctx->GetState();
+
+            constexpr size_t argCount = sizeof...(Params);
+            JSValue args[argCount] = { Stack<std::decay_t<Params>>::pushJS(m_ctx, std::forward<Params>(params))... };
+            
+            JSValue result = JS_Call(state, m_val, JS_UNDEFINED, argCount, args);
+            
+            for(size_t i = 0; i < argCount; i++) {
+                JS_FreeValue(state, args[i]);
+            }
+
+            if(JS_IsException(result)) EException::Throw(EException(m_ctx->GetState(), m_ctx->GetKind(), -1));
+
+            EValue returnVal(m_ctx, result);
+            JS_FreeValue(state, result);
+            return returnVal;
+        } else return EValue(m_ctx);
+    }
+
+private:
+    void pushLuaArguments() {}
+
+    template<typename T, typename... Params>
+    void pushLuaArguments(T& param, Params&&... params)
+    {
+        Stack<T>::pushLua(m_ctx, param);
+        pushLuaArguments(std::forward<Params>(params)...);
+    }
+};
+
+template<>
+struct Stack<EValue>
+{
+    static void pushLua(EContext* ctx, EValue value)
+    {
+        value.pushLua();
+    }
+
+    static JSValue pushJS(EContext* ctx, EValue value)
+    {
+        return value.pushJS();
+    }
+
+    static EValue getLua(EContext* ctx, int ref)
+    {
+        return EValue::fromLuaStack(ctx, ref);
+    }
+
+    static EValue getJS(EContext* ctx, JSValue value)
+    {
+        return EValue::fromJSStack(ctx, value);
+    }
+
+    static bool isLuaInstance(EContext* ctx, int ref)
+    {
+        return true;
+    }
+
+    static bool isJSInstance(EContext* ctx, JSValue value)
+    {
+        return true;
+    }
+};
+
+#endif
