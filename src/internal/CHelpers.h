@@ -7,6 +7,12 @@
 #include <string>
 #include "Context.h"
 #include "Stack.h"
+#include "Invoker.h"
+
+template <typename R, typename ... Params> constexpr size_t getArgumentCount( R(*f)(Params ...))
+{
+   return sizeof...(Params);
+}
 
 class CHelpers
 {
@@ -28,6 +34,16 @@ public:
         val = Stack<T>::getJS(ct, argv[0]);
 
         return JS_UNDEFINED;
+    }
+
+    template<class ReturnType, class... Params>
+    static JSValue JSCallFunction(JSContext *ctx, JSValue this_val, int argc, JSValue *argv, int magic, JSValue *func_data)
+    {
+        using FnType = ReturnType(*)(Params...);
+        FnType func = reinterpret_cast<FnType>(strtol((const char*)func_data, nullptr, 16));
+        if(!func) return JS_UNDEFINED;
+
+        return JSInvoker::run<ReturnType, Params...>(ctx, func, argv);
     }
 
     static JSValue js_print_to_console(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
@@ -238,6 +254,23 @@ public:
         *ptr = Stack<T>::getLua(GetContextByState(L), 1);
 
         return 0;
+    }
+
+    /************************************
+    * The end of the Lua Helpers were provided by LuaBridge 2.9. (https://github.com/vinniefalco/LuaBridge/tree/2.9)
+    * LuaBridge is licensed under MIT License 
+    * Copyright 2019, Dmitry Tarakanov
+    * Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
+    *************************************/
+
+    template<class ReturnType, class... Params>
+    static int LuaCallFunction(lua_State* L)
+    {
+        using FnType = ReturnType(*)(Params...);
+
+        FnType func = reinterpret_cast<FnType>(lua_touserdata(L, lua_upvalueindex(1)));
+        if(!func) return 0;
+        return LuaInvoker::run<ReturnType, Params...>(L, func);
     }
 };
 

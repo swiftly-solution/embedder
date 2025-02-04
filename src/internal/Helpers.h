@@ -2,6 +2,8 @@
 #define _embedder_internal_helpers_h
 
 #include <lua.hpp>
+#include <quickjs.h>
+#include <cassert>
 
 /************************************
 * All of the Lua Helpers were provided by LuaBridge 2.9. (https://github.com/vinniefalco/LuaBridge/tree/2.9)
@@ -160,5 +162,14 @@ void const* getConstRegistryKey()
     static char value;
     return &value;
 }
+
+/************************************
+* End of the Lua Helpers were provided by LuaBridge 2.9. (https://github.com/vinniefalco/LuaBridge/tree/2.9)
+* LuaBridge is licensed under MIT License 
+* Copyright 2019, Dmitry Tarakanov
+* Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
+*************************************/
+
+uint32_t JSGetArrayLength(JSContext* ctx, JSValue val);
 
 #endif

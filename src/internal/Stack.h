@@ -719,15 +719,13 @@ struct Stack<std::vector<T>>
         JSContext* L = (JSContext*)(ctx->GetState());
         if(!JS_IsArray(L, value)) return v;
 
-        uint32_t len;
-        JS_GetPropertyStr(L, value, "length");
-        JS_ToUint32(L, &len, value);
+        uint32_t len = JSGetArrayLength(L, value);
 
         v.reserve((std::size_t)(len));
 
         for(uint32_t i = 0; i < len; i++) {
             JSValue item = JS_GetPropertyUint32(L, value, i);
-            v.push_back(Stack<T>::getJS(ctx, value));
+            v.push_back(Stack<T>::getJS(ctx, item));
             JS_FreeValue(L, item);
         }
 
@@ -801,13 +799,11 @@ struct Stack<std::list<T>>
         JSContext* L = (JSContext*)(ctx->GetState());
         if(!JS_IsArray(L, value)) return v;
 
-        uint32_t len;
-        JS_GetPropertyStr(L, value, "length");
-        JS_ToUint32(L, &len, value);
+        uint32_t len = JSGetArrayLength(L, value);
 
         for(uint32_t i = 0; i < len; i++) {
             JSValue item = JS_GetPropertyUint32(L, value, i);
-            v.push_back(Stack<T>::getJS(ctx, value));
+            v.push_back(Stack<T>::getJS(ctx, item));
             JS_FreeValue(L, item);
         }
 
@@ -880,15 +876,13 @@ struct Stack<std::array<T, s>>
         JSContext* L = (JSContext*)(ctx->GetState());
         if(!JS_IsArray(L, value)) return v;
 
-        uint32_t len;
-        JS_GetPropertyStr(L, value, "length");
-        JS_ToUint32(L, &len, value);
+        uint32_t len = JSGetArrayLength(L, value);
 
         if(len != s) return v;
 
         for(uint32_t i = 0; i < len; i++) {
             JSValue item = JS_GetPropertyUint32(L, value, i);
-            v[i] = Stack<T>::getJS(ctx, value);
+            v[i] = Stack<T>::getJS(ctx, item);
             JS_FreeValue(L, item);
         }
 
@@ -903,12 +897,7 @@ struct Stack<std::array<T, s>>
     static bool isJSInstance(EContext* ctx, JSValue value)
     {
         if(!JS_IsArray((JSContext*)(ctx->GetState()), value)) return false;
-
-        uint32_t len;
-        JS_GetPropertyStr((JSContext*)(ctx->GetState()), value, "length");
-        JS_ToUint32((JSContext*)(ctx->GetState()), &len, value);
-        
-        return len == s;
+        return JSGetArrayLength((JSContext*)(ctx->GetState()), value) == s;
     }
 };
 
@@ -1148,9 +1137,7 @@ struct Stack<std::pair<T1, T2>>
         JSContext* L = (JSContext*)(ctx->GetState());
         if(!JS_IsArray(L, value)) return v;
 
-        uint32_t len;
-        JS_GetPropertyStr(L, value, "length");
-        JS_ToUint32(L, &len, value);
+        uint32_t len = JSGetArrayLength(L, value);
         if(len != 2) return v;
 
         JSValue item = JS_GetPropertyUint32(L, value, 0);
@@ -1172,11 +1159,7 @@ struct Stack<std::pair<T1, T2>>
     static bool isJSInstance(EContext* ctx, JSValue value)
     {
         if(!JS_IsArray((JSContext*)(ctx->GetState()), value)) return false;
-
-        uint32_t len;
-        JS_GetPropertyStr((JSContext*)(ctx->GetState()), value, "length");
-        JS_ToUint32((JSContext*)(ctx->GetState()), &len, value);
-        return len == 2;
+        return JSGetArrayLength((JSContext*)(ctx->GetState()), value) == 2;
     }
 };
 

@@ -83,6 +83,54 @@ public:
 
         return *this;
     }
+
+    template<class ReturnType, class... Params>
+    Namespace& addFunction(std::string name, ReturnType (*func)(Params...)) {
+        if(m_ctx->GetKind() == ContextKinds::Lua) {
+            lua_State* L = (lua_State*)m_ctx->GetState();
+            lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref); // ns
+
+            lua_pushlightuserdata(L, reinterpret_cast<void*>(func)); // ns, ptr (upvalue 1)
+            lua_pushcclosure(L, CHelpers::LuaCallFunction<ReturnType, Params...>, 1); // ns, ptr, closure
+            rawsetfield(L, -2, name.c_str()); // ns
+
+            lua_pop(L, 1); // empty
+        } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
+            JSContext* ctx = (JSContext*)m_ctx->GetState();
+
+            JS_SetPropertyStr(
+                ctx, m_ns, name.c_str(), 
+                JS_NewCFunctionData(ctx, CHelpers::JSCallFunction<ReturnType, Params...>, 0, 1, 1, (JSValue*)(CHelpers::string_format("%p", reinterpret_cast<void*>(func)).c_str()))
+            );
+        }
+
+        return *this;
+    }
+
+    Namespace& addLuaFunction(std::string name, lua_CFunction func) {
+        if(m_ctx->GetKind() != ContextKinds::Lua) return *this;
+
+        lua_State* L = (lua_State*)m_ctx->GetState();
+        lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref); // ns
+
+        lua_pushcfunction(L, func); // ns, func
+        rawsetfield(L, -2, name.c_str()); // ns[name] = func. ns
+        
+        lua_pop(L, 1); // empty
+        return *this;
+    }
+
+    Namespace& addJSFunction(std::string name, JSCFunction func) {
+        if(m_ctx->GetKind() != ContextKinds::JavaScript) return *this;
+
+        JSContext* ctx = (JSContext*)m_ctx->GetState();
+
+        JS_SetPropertyStr(
+            ctx, m_ns, name.c_str(), 
+            JS_NewCFunction(ctx, func, name.c_str(), 0)
+        );
+        return *this;
+    }
 };
 
 Namespace GetGlobalNamespace(EContext* ctx);
