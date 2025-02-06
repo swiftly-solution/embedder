@@ -11,16 +11,19 @@
 #include "CHelpers.h"
 #include "Value.h"
 
+template<class T>
+class EClass;
+
 class Namespace
 {
-private:
+public:
     int m_ref;
     JSValue m_ns;
     EContext* m_ctx;
     std::string m_name;
     Namespace* m_parent;
 
-public:
+    Namespace() = default;
     Namespace(EContext* ctx, std::string nsName, Namespace *parent = nullptr);
     ~Namespace();
 
@@ -131,6 +134,125 @@ public:
             JS_NewCFunction(ctx, func, name.c_str(), 0)
         );
         return *this;
+    }
+
+    template<class T>
+    EClass<T> beginClass(std::string name)
+    {
+        return EClass<T>(name, this);
+    }
+};
+
+template<class T>
+class EClass
+{
+private:
+    std::string m_name;
+    Namespace* m_namespace;
+    int m_ref;
+
+protected:
+    void createLuaConstTable(lua_State* L, const std::string& name, bool trueConst = true) {
+        std::string type_name = (trueConst ? "const " : "") + name;
+        luaL_newmetatable(L, typeid(T).name());
+        lua_pushvalue(L, -1);
+        lua_setmetatable(L, -2);
+        lua_pushstring(L, type_name.c_str());
+        lua_rawsetp(L, -2, getTypeKey());
+        lua_pushcfunction(L, &CHelpers::indexMetaMethod);
+        rawsetfield(L, -2, "__index");
+        lua_pushcfunction(L, &CHelpers::newindexObjectMetaMethod);
+        rawsetfield(L, -2, "__newindex");
+        lua_newtable(L);
+        lua_rawsetp(L, -2, getPropgetKey());
+        lua_newtable(L);
+        lua_rawsetp(L, -2, getPropsetKey());
+        lua_pushnil(L);
+        rawsetfield(L, -2, "__metatable");
+    }
+
+public:
+
+    EClass(std::string name, Namespace* nmsp)
+    {
+        m_name = name;
+        m_namespace = nmsp;
+
+        if(m_namespace->m_ctx->GetKind() == ContextKinds::Lua) {
+            lua_State* L = (lua_State*)m_namespace->m_ctx->GetState();
+
+            lua_newtable(L);
+            createLuaConstTable(L, name);
+
+            m_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+        }
+    }
+
+    template<class... Params>
+    EClass<T> addConstructor()
+    {
+        if(m_namespace->m_ctx->GetKind() == ContextKinds::Lua) {
+            lua_State* L = (lua_State*)m_namespace->m_ctx->GetState();
+            lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
+
+            lua_newtable(L);
+            lua_pushcclosure(L, &CHelpers::lua_dynamic_constructor<T, Params...>, 0);
+            rawsetfield(L, -2, "__call");
+            lua_setmetatable(L, -2);
+
+            lua_pop(L, 1);
+        }
+        return *this;
+    }
+
+    template<class ReturnType, class... Params>
+    EClass<T> addFunction(std::string name, ReturnType(T::*func)(Params...)) {
+        if(m_namespace->m_ctx->GetKind() == ContextKinds::Lua) {
+            lua_State* L = static_cast<lua_State*>(m_namespace->m_ctx->GetState());
+
+            lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
+            lua_pushlightuserdata(L, (void*)(func));
+            lua_pushcclosure(L, CHelpers::LuaCallFunction<ReturnType, T*, Params...>, 1);
+            rawsetfield(L, -2, name.c_str());
+            lua_pop(L, 1);
+        }
+
+        return *this;
+    }
+
+    template<class PropType>
+    EClass<T> addProperty(std::string name, PropType T::*member, bool writable = true) {
+        if(m_namespace->m_ctx->GetKind() == ContextKinds::Lua) {
+            lua_State* L = static_cast<lua_State*>(m_namespace->m_ctx->GetState());
+
+            lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
+
+            typedef const PropType T::*mp_t;
+            new (lua_newuserdata(L, sizeof(mp_t))) mp_t(member); 
+            lua_pushcclosure(L, &CHelpers::getProperty<T, PropType>, 1); 
+            CHelpers::addGetter(L, name.c_str(), -2); 
+
+            if (writable)
+            {
+                new (lua_newuserdata(L, sizeof(mp_t))) mp_t(member);
+                lua_pushcclosure(L, &CHelpers::setProperty<T, PropType>, 1);
+                CHelpers::addSetter(L, name.c_str(), -2);
+            }
+            lua_pop(L, 1);
+        }
+        return *this;
+    }
+
+    Namespace endClass()
+    {
+        if(m_namespace->m_ctx->GetKind() == ContextKinds::Lua) {
+            lua_State* L = (lua_State*)m_namespace->m_ctx->GetState();
+            lua_rawgeti(L, LUA_REGISTRYINDEX, m_namespace->m_ref);
+            lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
+            rawsetfield(L, -2, m_name.c_str());
+            lua_pop(L, 1);
+        }
+        return *m_namespace;
     }
 };
 

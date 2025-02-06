@@ -1163,4 +1163,70 @@ struct Stack<std::pair<T1, T2>>
     }
 };
 
+template<class T>
+struct Stack<T*>
+{
+    static void pushLua(EContext* ctx, T* instance) {
+        lua_State* L = (lua_State*)ctx->GetState();
+        
+        T** userdata = (T**)lua_newuserdata(L, sizeof(T*));
+        *userdata = instance;
+        
+        luaL_getmetatable(L, typeid(T).name());
+        lua_setmetatable(L, -2);
+    }
+
+    static T* getLua(EContext* ctx, int index) {
+        lua_State* L = (lua_State*)ctx->GetState();
+        T** userdata = (T**)luaL_checkudata(L, index, typeid(T).name());
+        return userdata ? *userdata : nullptr;
+    }
+
+    static bool isLuaInstance(EContext* ctx, int index) {
+        lua_State* L = (lua_State*)ctx->GetState();
+        void* userdata = luaL_testudata(L, index, typeid(T).name());
+        return userdata != nullptr;
+    }
+
+    static JSValue pushJS(EContext* ctx, T* instance) {
+        return JS_NULL;
+    }
+
+    static T* getJS(EContext* ctx, JSValue value) {
+        return nullptr;
+    }
+
+    static bool isJSInstance(EContext* ctx, JSValue value) {
+        return false;
+    }
+};
+
+template<class T>
+struct Stack<T&>
+{
+    static void pushLua(EContext* ctx, T& instance) {
+        Stack<T*>::pushLua(ctx, &instance);
+    }
+
+    static T& getLua(EContext* ctx, int index) {
+        return *Stack<T*>::getLua(ctx, index);
+    }
+
+    static bool isLuaInstance(EContext* ctx, int index) {
+        return Stack<T*>::isLuaInstance(ctx, index);
+    }
+
+    static JSValue pushJS(EContext* ctx, T& instance) {
+        return Stack<T*>::pushJS(ctx, &instance);
+    }
+
+    static T& getJS(EContext* ctx, JSValue value) {
+        return *Stack<T*>::getJS(ctx, value);
+    }
+
+    static bool isJSInstance(EContext* ctx, JSValue value) {
+        return Stack<T*>::isJSInstance(ctx, value);
+    }
+};
+
 #endif

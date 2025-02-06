@@ -99,7 +99,9 @@ int64_t EContext::GetMemoryUsage()
 int EContext::RunCode(std::string code)
 {
     if(m_kind == ContextKinds::Lua) {
-        return luaL_dostring((lua_State*)m_state, code.c_str());
+        int cd = (luaL_dostring((lua_State*)m_state, code.c_str()));
+        if(cd != 0) EException::Throw(EException(GetState(), GetKind(), cd));
+        return cd;
     } else if(m_kind == ContextKinds::JavaScript) {
         auto res = JS_Eval((JSContext*)m_state, code.c_str(), code.length(), "runcode.js", JS_EVAL_TYPE_GLOBAL);
         bool isException = JS_IsException(res);

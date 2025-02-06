@@ -5,9 +5,115 @@
 #include <quickjs.h>
 #include <cassert>
 #include <string>
+#include <iostream>
 #include "Context.h"
 #include "Stack.h"
 #include "Invoker.h"
+
+inline void putIndent(std::ostream& stream, unsigned level)
+{
+    for (unsigned i = 0; i < level; ++i)
+    {
+        stream << "  ";
+    }
+}
+
+inline void
+dumpTable(lua_State* L, int index, std::ostream& stream, unsigned level, unsigned maxDepth);
+
+inline void
+dumpValue(lua_State* L, int index, std::ostream& stream, unsigned maxDepth = 1, unsigned level = 0)
+{
+    const int type = lua_type(L, index);
+    switch (type)
+    {
+    case LUA_TNIL:
+        stream << "nil";
+        break;
+
+    case LUA_TBOOLEAN:
+        stream << (lua_toboolean(L, index) ? "true" : "false");
+        break;
+
+    case LUA_TNUMBER:
+        stream << lua_tonumber(L, index);
+        break;
+
+    case LUA_TSTRING:
+        stream << '"' << lua_tostring(L, index) << '"';
+        break;
+
+    case LUA_TFUNCTION:
+        if (lua_iscfunction(L, index))
+        {
+            stream << "cfunction@" << lua_topointer(L, index);
+        }
+        else
+        {
+            stream << "function@" << lua_topointer(L, index);
+        }
+        break;
+
+    case LUA_TTHREAD:
+        stream << "thread@" << lua_tothread(L, index);
+        break;
+
+    case LUA_TLIGHTUSERDATA:
+        stream << "lightuserdata@" << lua_touserdata(L, index);
+        break;
+
+    case LUA_TTABLE:
+        dumpTable(L, index, stream, level, maxDepth);
+        break;
+
+    case LUA_TUSERDATA:
+        stream << "userdata@" << lua_touserdata(L, index);
+        break;
+
+    default:
+        stream << lua_typename(L, type);
+        ;
+        break;
+    }
+}
+
+inline void
+dumpTable(lua_State* L, int index, std::ostream& stream, unsigned level, unsigned maxDepth)
+{
+    stream << "table@" << lua_topointer(L, index);
+
+    if (level > maxDepth)
+    {
+        return;
+    }
+
+    index = lua_absindex(L, index);
+    stream << " {";
+    lua_pushnil(L); // Initial key
+    while (lua_next(L, index))
+    {
+        stream << "\n";
+        putIndent(stream, level + 1);
+        dumpValue(L, -2, stream, maxDepth, level + 1); // Key
+        stream << ": ";
+        dumpValue(L, -1, stream, maxDepth, level + 1); // Value
+        lua_pop(L, 1); // Value
+    }
+    stream << "\n";
+    putIndent(stream, level);
+    stream << "}";
+}
+
+inline void dumpState(lua_State* L, std::ostream& stream = std::cerr, unsigned maxDepth = 1)
+{
+    int top = lua_gettop(L);
+    for (int i = 1; i <= top; ++i)
+    {
+        stream << "stack #" << i << ": ";
+        dumpValue(L, i, stream, maxDepth, 0);
+        stream << "\n";
+    }
+}
 
 template <typename R, typename ... Params> constexpr size_t getArgumentCount( R(*f)(Params ...))
 {
@@ -256,6 +362,38 @@ public:
         return 0;
     }
 
+    template<class C, typename T>
+    static int getProperty(lua_State* L)
+    {
+        C* c = *(C**)lua_touserdata(L, 1);
+        T C::** mp = static_cast<T C::**>(lua_touserdata(L, lua_upvalueindex(1)));
+        try
+        {
+            Stack<T>::pushLua(GetContextByState(L), c->**mp);
+        }
+        catch (const std::exception& e)
+        {
+            luaL_error(L, e.what());
+        }
+        return 1;
+    }
+
+    template<class C, typename T>
+    static int setProperty(lua_State* L)
+    {
+        C* c = *(C**)lua_touserdata(L, 1);
+        T C::** mp = static_cast<T C::**>(lua_touserdata(L, lua_upvalueindex(1)));
+        try
+        {
+            c->** mp = Stack<T>::getLua(GetContextByState(L), 2);
+        }
+        catch (const std::exception& e)
+        {
+            luaL_error(L, e.what());
+        }
+        return 0;
+    }
+
     /************************************
     * The end of the Lua Helpers were provided by LuaBridge 2.9. (https://github.com/vinniefalco/LuaBridge/tree/2.9)
     * LuaBridge is licensed under MIT License 
@@ -271,6 +409,33 @@ public:
         FnType func = reinterpret_cast<FnType>(lua_touserdata(L, lua_upvalueindex(1)));
         if(!func) return 0;
         return LuaInvoker::run<ReturnType, Params...>(L, func);
+    }
+
+    template<class T>
+    static int LuaGCFunction(lua_State* L)
+    {
+        T** udata = (T**)lua_touserdata(L, 1);
+        if(udata && *udata) {
+            delete *udata;
+            *udata = nullptr;
+        }
+        return 0;
+    }
+
+    template<class T, typename... Params, std::size_t... I>
+    static T* construct_helper(lua_State* L, std::index_sequence<I...>) {
+        EContext* ctx = GetContextByState(L);
+        return new T(Stack<std::decay_t<Params>>::getLua(ctx, static_cast<int>(I + 2))...);
+    }
+
+    template<class T, typename... Params>
+    static int lua_dynamic_constructor(lua_State* L) {
+        T* obj = construct_helper<T, Params...>(L, std::index_sequence_for<Params...>{});
+        T** udata = static_cast<T**>(lua_newuserdata(L, sizeof(T*)));
+        *udata = obj;
+        luaL_getmetatable(L, typeid(T).name());
+        lua_setmetatable(L, -2);
+        return 1;
     }
 };
 
