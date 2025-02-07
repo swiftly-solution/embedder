@@ -172,4 +172,11 @@ void const* getConstRegistryKey()
 
 uint32_t JSGetArrayLength(JSContext* ctx, JSValue val);
 
+template<class T>
+static JSClassID* getClassID()
+{
+    static JSClassID id;
+    return &id;
+}
+
 #endif

@@ -60,6 +60,28 @@ public:
             return JS_ThrowInternalError(ctx, e.what());
         }
     }
+
+    template<class ReturnType, class T, class... Params, std::size_t... I>
+    static ReturnType callFunctionImplClass(EContext* ctx, void* ptr, JSValue* args, ReturnType (*func)(T*, Params...), std::index_sequence<I...>) {
+        return func((T*)ptr, Stack<Params>::getJS(ctx, args[I])...);
+    }
+
+    template<class ReturnType, class T, class... Params>
+    static JSValue runClass(JSContext* ctx, JSValue this_obj, ReturnType (*func)(T*, Params...), JSValue* args) {
+        try {
+            EContext* ictx = GetContextByState(ctx);
+
+            if constexpr (std::is_same<ReturnType, void>::value) {
+                callFunctionImplClass<ReturnType, Params...>(ictx, Stack<T*>::getJS(ictx, this_obj), args, func, std::index_sequence_for<Params...>{});
+                return JS_UNDEFINED;
+            } else {
+                ReturnType val = callFunctionImplClass<ReturnType, Params...>(ictx, Stack<T*>::getJS(ictx, this_obj), args, func, std::index_sequence_for<Params...>{});
+                return Stack<ReturnType>::pushJS(ictx, val);
+            }
+        } catch(const std::exception& e) {
+            return JS_ThrowInternalError(ctx, e.what());
+        }
+    }
 };
 
 #endif

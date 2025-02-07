@@ -10,111 +10,6 @@
 #include "Stack.h"
 #include "Invoker.h"
 
-inline void putIndent(std::ostream& stream, unsigned level)
-{
-    for (unsigned i = 0; i < level; ++i)
-    {
-        stream << "  ";
-    }
-}
-
-inline void
-dumpTable(lua_State* L, int index, std::ostream& stream, unsigned level, unsigned maxDepth);
-
-inline void
-dumpValue(lua_State* L, int index, std::ostream& stream, unsigned maxDepth = 1, unsigned level = 0)
-{
-    const int type = lua_type(L, index);
-    switch (type)
-    {
-    case LUA_TNIL:
-        stream << "nil";
-        break;
-
-    case LUA_TBOOLEAN:
-        stream << (lua_toboolean(L, index) ? "true" : "false");
-        break;
-
-    case LUA_TNUMBER:
-        stream << lua_tonumber(L, index);
-        break;
-
-    case LUA_TSTRING:
-        stream << '"' << lua_tostring(L, index) << '"';
-        break;
-
-    case LUA_TFUNCTION:
-        if (lua_iscfunction(L, index))
-        {
-            stream << "cfunction@" << lua_topointer(L, index);
-        }
-        else
-        {
-            stream << "function@" << lua_topointer(L, index);
-        }
-        break;
-
-    case LUA_TTHREAD:
-        stream << "thread@" << lua_tothread(L, index);
-        break;
-
-    case LUA_TLIGHTUSERDATA:
-        stream << "lightuserdata@" << lua_touserdata(L, index);
-        break;
-
-    case LUA_TTABLE:
-        dumpTable(L, index, stream, level, maxDepth);
-        break;
-
-    case LUA_TUSERDATA:
-        stream << "userdata@" << lua_touserdata(L, index);
-        break;
-
-    default:
-        stream << lua_typename(L, type);
-        ;
-        break;
-    }
-}
-
-inline void
-dumpTable(lua_State* L, int index, std::ostream& stream, unsigned level, unsigned maxDepth)
-{
-    stream << "table@" << lua_topointer(L, index);
-
-    if (level > maxDepth)
-    {
-        return;
-    }
-
-    index = lua_absindex(L, index);
-    stream << " {";
-    lua_pushnil(L); // Initial key
-    while (lua_next(L, index))
-    {
-        stream << "\n";
-        putIndent(stream, level + 1);
-        dumpValue(L, -2, stream, maxDepth, level + 1); // Key
-        stream << ": ";
-        dumpValue(L, -1, stream, maxDepth, level + 1); // Value
-        lua_pop(L, 1); // Value
-    }
-    stream << "\n";
-    putIndent(stream, level);
-    stream << "}";
-}
-
-inline void dumpState(lua_State* L, std::ostream& stream = std::cerr, unsigned maxDepth = 1)
-{
-    int top = lua_gettop(L);
-    for (int i = 1; i <= top; ++i)
-    {
-        stream << "stack #" << i << ": ";
-        dumpValue(L, i, stream, maxDepth, 0);
-        stream << "\n";
-    }
-}
-
 template <typename R, typename ... Params> constexpr size_t getArgumentCount( R(*f)(Params ...))
 {
    return sizeof...(Params);
@@ -142,6 +37,38 @@ public:
         return JS_UNDEFINED;
     }
 
+    template<class C, class T>
+    static JSValue propClassGetter(JSContext *ctx, JSValue this_val, int argc, JSValue *argv, int magic, JSValue *func_data)
+    {
+        auto ectx = GetContextByState(ctx);
+        C* val = Stack<C*>::getJS(ectx, this_val);
+        T C::** mp = static_cast<T C::**>((void*)strtol((const char*)func_data, nullptr, 16));
+
+        try {
+            return Stack<T>::pushJS(ectx, val->**mp);
+        } catch(std::exception& e) {
+            return JS_ThrowInternalError(ctx, e.what());
+        }
+    }
+
+    template<class C, class T>
+    static JSValue propClassSetter(JSContext *ctx, JSValue this_val, int argc, JSValue *argv, int magic, JSValue *func_data)
+    {
+        auto ectx = GetContextByState(ctx);
+        if(!Stack<T>::isJSInstance(ectx, argv[0])) return JS_ThrowTypeError(ctx, "Property Setter: Invalid data type.");
+
+        C* val = Stack<C*>::getJS(ectx, this_val);
+        T C::** mp = static_cast<T C::**>((void*)strtol((const char*)func_data, nullptr, 16));
+
+        try {
+            val->**mp = Stack<T>::getJS(ectx, argv[0]);
+        } catch(std::exception& e) {
+            return JS_ThrowInternalError(ctx, e.what());
+        }
+
+        return JS_UNDEFINED;
+    }
+
     template<class ReturnType, class... Params>
     static JSValue JSCallFunction(JSContext *ctx, JSValue this_val, int argc, JSValue *argv, int magic, JSValue *func_data)
     {
@@ -150,6 +77,16 @@ public:
         if(!func) return JS_UNDEFINED;
 
         return JSInvoker::run<ReturnType, Params...>(ctx, func, argv);
+    }
+
+    template<class ReturnType, class T, class... Params>
+    static JSValue JSCallClassFunction(JSContext *ctx, JSValue this_val, int argc, JSValue *argv, int magic, JSValue *func_data)
+    {
+        using FnType = ReturnType(*)(T*, Params...);
+        FnType func = reinterpret_cast<FnType>(strtol((const char*)func_data, nullptr, 16));
+        if(!func) return JS_UNDEFINED;
+
+        return JSInvoker::runClass<ReturnType, T, Params...>(ctx, this_val, func, argv);
     }
 
     static JSValue js_print_to_console(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
@@ -423,19 +360,68 @@ public:
     }
 
     template<class T, typename... Params, std::size_t... I>
-    static T* construct_helper(lua_State* L, std::index_sequence<I...>) {
+    static T* construct_lua_helper(lua_State* L, std::index_sequence<I...>) {
         EContext* ctx = GetContextByState(L);
         return new T(Stack<std::decay_t<Params>>::getLua(ctx, static_cast<int>(I + 2))...);
     }
 
     template<class T, typename... Params>
     static int lua_dynamic_constructor(lua_State* L) {
-        T* obj = construct_helper<T, Params...>(L, std::index_sequence_for<Params...>{});
+        T* obj = construct_lua_helper<T, Params...>(L, std::index_sequence_for<Params...>{});
         T** udata = static_cast<T**>(lua_newuserdata(L, sizeof(T*)));
         *udata = obj;
         luaL_getmetatable(L, typeid(T).name());
         lua_setmetatable(L, -2);
         return 1;
+    }
+    
+    template<class T>
+    static void JSGCFunction(JSRuntime* rt, JSValue val)
+    {
+        auto ctx = GetContextByState(rt);
+        if(!ctx) return;
+        auto opaque = JS_GetOpaque2((JSContext*)ctx->GetState(), val, *getClassID<T>());
+        T* ptr = (T*)opaque;
+        if(ptr) delete ptr;
+    }
+    
+    template<class T>
+    static bool register_js_class(JSContext* ctx) {
+        JSClassID& id = *getClassID<T>();
+        if(id != 0) return false;
+
+        JSRuntime* rt = JS_GetRuntime(ctx);
+        JS_NewClassID(rt, &id);
+        JSClassDef class_def = {
+            typeid(T).name(),
+            .finalizer = JSGCFunction<T>,
+        };
+
+        if (JS_NewClass(rt, id, &class_def) < 0)
+            return false;
+
+        JSValue proto = JS_NewObject(ctx);
+        JS_SetClassProto(ctx, id, proto);
+        return true;
+    }
+
+    template<class T, typename... Params, std::size_t... I>
+    static T* construct_js_helper(JSContext* L, JSValue* argv, std::index_sequence<I...>) {
+        EContext* ctx = GetContextByState(L);
+        return new T(Stack<std::decay_t<Params>>::getJS(ctx, argv[I])...);
+    }
+
+    template<class T, typename... Params>
+    static JSValue js_dynamic_constructor(JSContext *ctx, JSValue this_val, int argc, JSValue *argv, int magic, JSValue *func_data)
+    {
+        T* ptr = construct_js_helper<T, Params...>(ctx, argv, std::index_sequence_for<Params...>{});
+        
+        JSClassID& id = *getClassID<T>();
+        JSValue proto = JS_GetClassProto(ctx, id);
+        JSValue ret = JS_NewObjectProtoClass(ctx, proto, id);
+
+        if(!JS_IsException(ret)) JS_SetOpaque(ret, ptr);
+        return ret;
     }
 };
 

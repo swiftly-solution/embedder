@@ -35,6 +35,7 @@ public:
     void PopValue(EValue* val);
 };
 
+EContext* GetContextByState(JSRuntime* rt);
 EContext* GetContextByState(JSContext* ctx);
 EContext* GetContextByState(lua_State* ctx);
 

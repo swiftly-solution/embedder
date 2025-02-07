@@ -975,6 +975,8 @@ struct Stack<std::map<K, V>>
             JS_FreeValue(L, property);
         }
 
+        JS_FreePropertyEnum(L, properties, propCount);
+    
         return v;
     }
 
@@ -1062,6 +1064,8 @@ struct Stack<std::unordered_map<K, V>>
             JS_FreeValue(L, propVal);
             JS_FreeValue(L, property);
         }
+
+        JS_FreePropertyEnum(L, properties, propCount);
 
         return v;
     }
@@ -1189,14 +1193,25 @@ struct Stack<T*>
     }
 
     static JSValue pushJS(EContext* ctx, T* instance) {
-        return JS_NULL;
+        JSContext* L = (JSContext*)ctx->GetState();
+
+        JSClassID& id = *getClassID<T>();
+        JSValue proto = JS_GetClassProto(L, id);
+        JSValue ret = JS_NewObjectProtoClass(L, proto, id);
+
+        if(!JS_IsException(ret)) JS_SetOpaque(ret, instance);
+        return ret;
     }
 
     static T* getJS(EContext* ctx, JSValue value) {
-        return nullptr;
+        return (T*)JS_GetOpaque2((JSContext*)ctx->GetState(), value, *getClassID<T>());
     }
 
     static bool isJSInstance(EContext* ctx, JSValue value) {
+        void* data = JS_GetOpaque2((JSContext*)ctx->GetState(), value, *getClassID<T>());
+        if(dynamic_cast<T*>(data) != nullptr)
+            return true;
+
         return false;
     }
 };

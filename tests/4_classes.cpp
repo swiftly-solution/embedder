@@ -32,3 +32,22 @@ TEST_CASE("Lua Class", "[classes]")
 
     delete ctx;
 }
+
+TEST_CASE("JavaScript Class", "[classes]")
+{
+    fprintf(stdout, "------------- JavaScript Class -------------\n");
+
+    EContext* ctx = new EContext(ContextKinds::JavaScript);
+
+    GetGlobalNamespace(ctx)
+        .beginClass<SomeClass>("SomeClass")
+            .addConstructor<int>()
+            .addFunction("printIt", &SomeClass::printA)
+            .addProperty("b", &SomeClass::m_b)
+        .endClass();
+
+    const char* s = "let cls = SomeClass(69); let cls2 = SomeClass(420); cls2.printIt(); cls2.b = 69420; cls2.printIt(); cls.printIt(); console.log(cls.b)";
+    REQUIRE(ctx->RunCode(s) == 0);
+
+    delete ctx;
+}

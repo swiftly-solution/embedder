@@ -127,6 +127,17 @@ void* EContext::GetState()
     return m_state;
 }
 
+EContext* GetContextByState(JSRuntime* rt)
+{
+    for(auto it = ctxs.begin(); it != ctxs.end(); ++it)
+    {
+        EContext* ct = *it;
+        if(JS_GetRuntime((JSContext*)ct->GetState()) == rt)
+            return ct;
+    }
+    return nullptr;
+}
+
 EContext* GetContextByState(JSContext* ctx)
 {
     for(auto it = ctxs.begin(); it != ctxs.end(); ++it)
