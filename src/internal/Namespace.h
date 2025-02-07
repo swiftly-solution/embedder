@@ -276,6 +276,46 @@ public:
         return *this;
     }
 
+    EClass<T> addLuaCustomIndex(lua_CFunction index, lua_CFunction newindex)
+    {
+        if(m_namespace->m_ctx->GetKind() != ContextKinds::Lua) return *this;
+        lua_State* L = (lua_State*)m_namespace->m_ctx->GetState();
+
+        lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
+        lua_pushcfunction(L, index);
+        rawsetfield(L, -2, "__index");
+        lua_pushcfunction(L, newindex);
+        rawsetfield(L, -2, "__newindex");
+        lua_pop(L, 1);
+
+        return *this;
+    }
+
+    EClass<T> addJSCustomIndex(JSCFunction jsindex, JSCFunction jsnewindex)
+    {
+        if(m_namespace->m_ctx->GetKind() != ContextKinds::JavaScript) return *this;
+        JSContext* jsctx = (JSContext*)m_namespace->m_ctx->GetState();
+        
+        JSClassID id = *getClassID<T>();
+
+        JSValue global_obj = JS_GetGlobalObject(jsctx);
+        JSValue proxy_ctor = JS_GetPropertyStr(jsctx, global_obj, "Proxy");
+        JS_FreeValue(jsctx, global_obj);
+
+        JSValue handler = JS_NewObject(jsctx);
+        JS_SetPropertyStr(jsctx, handler, "get", JS_NewCFunction(jsctx, jsindex, "get", 2));
+        JS_SetPropertyStr(jsctx, handler, "set", JS_NewCFunction(jsctx, jsnewindex, "set", 3));
+
+        JSValue args[2] = { JS_NewObject(jsctx), handler };
+        JSValue proxy_obj = JS_CallConstructor(jsctx, proxy_ctor, 2, args);
+
+        JS_FreeValue(jsctx, proxy_ctor);
+        JS_FreeValue(jsctx, handler);
+
+        JS_SetClassProto(jsctx, id, proxy_obj);
+        return *this;
+    }
+
     Namespace endClass()
     {
         if(m_namespace->m_ctx->GetKind() == ContextKinds::Lua) {
