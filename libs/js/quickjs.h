@@ -37,6 +37,8 @@
 extern "C" {
 #endif
 
+#define QUICKJS_NG 1
+
 #if defined(__GNUC__) || defined(__clang__)
 #define js_force_inline       inline __attribute__((always_inline))
 #define JS_EXTERN __attribute__((visibility("default")))
@@ -104,7 +106,6 @@ enum {
     /* any larger tag is FLOAT64 if JS_NAN_BOXING */
 };
 
-#define JS_FLOAT64_NAN NAN
 #define JSValueConst JSValue /* For backwards compatibility. */
 
 #if defined(JS_NAN_BOXING) && JS_NAN_BOXING
@@ -210,7 +211,7 @@ static inline JSValue JS_MKVAL(int64_t tag, int32_t int32)
 static inline JSValue JS_MKNAN(void)
 {
     JSValue v;
-    v.u.float64 = JS_FLOAT64_NAN;
+    v.u.float64 = NAN;
     v.tag = JS_TAG_FLOAT64;
     return v;
 }
@@ -221,7 +222,7 @@ static inline JSValue JS_MKNAN(void)
 #else
 #define JS_MKPTR(tag, p)   (JSValue){ (JSValueUnion){ .ptr = p }, tag }
 #define JS_MKVAL(tag, val) (JSValue){ (JSValueUnion){ .int32 = val }, tag }
-#define JS_NAN             (JSValue){ (JSValueUnion){ .float64 = JS_FLOAT64_NAN }, JS_TAG_FLOAT64 }
+#define JS_NAN             (JSValue){ (JSValueUnion){ .float64 = NAN }, JS_TAG_FLOAT64 }
 #endif
 
 #define JS_TAG_IS_FLOAT64(tag) ((unsigned)(tag) == JS_TAG_FLOAT64)
@@ -540,6 +541,16 @@ typedef struct JSClassDef {
     JSClassExoticMethods *exotic;
 } JSClassDef;
 
+#define JS_EVAL_OPTIONS_VERSION 1
+
+typedef struct JSEvalOptions {
+  int version;
+  int eval_flags;
+  const char *filename;
+  int line_num;
+  // can add new fields in ABI-compatible manner by incrementing JS_EVAL_OPTIONS_VERSION
+} JSEvalOptions;
+
 #define JS_INVALID_CLASS_ID 0
 JS_EXTERN JSClassID JS_NewClassID(JSRuntime *rt, JSClassID *pclass_id);
 /* Returns the class ID if `v` is an object, otherwise returns JS_INVALID_CLASS_ID. */
@@ -803,10 +814,14 @@ JS_EXTERN bool JS_DetectModule(const char *input, size_t input_len);
 /* 'input' must be zero terminated i.e. input[input_len] = '\0'. */
 JS_EXTERN JSValue JS_Eval(JSContext *ctx, const char *input, size_t input_len,
                           const char *filename, int eval_flags);
-/* same as JS_Eval() but with an explicit 'this_obj' parameter */
+JS_EXTERN JSValue JS_Eval2(JSContext *ctx, const char *input, size_t input_len,
+                           JSEvalOptions *options);
 JS_EXTERN JSValue JS_EvalThis(JSContext *ctx, JSValue this_obj,
                               const char *input, size_t input_len,
                               const char *filename, int eval_flags);
+JS_EXTERN JSValue JS_EvalThis2(JSContext *ctx, JSValue this_obj,
+                              const char *input, size_t input_len,
+                              JSEvalOptions *options);
 JS_EXTERN JSValue JS_GetGlobalObject(JSContext *ctx);
 JS_EXTERN int JS_IsInstanceOf(JSContext *ctx, JSValue val, JSValue obj);
 JS_EXTERN int JS_DefineProperty(JSContext *ctx, JSValue this_obj,
@@ -1006,6 +1021,10 @@ typedef union JSCFunctionType {
 JS_EXTERN JSValue JS_NewCFunction2(JSContext *ctx, JSCFunction *func,
                                    const char *name,
                                    int length, JSCFunctionEnum cproto, int magic);
+JS_EXTERN JSValue JS_NewCFunction3(JSContext *ctx, JSCFunction *func,
+                                   const char *name,
+                                   int length, JSCFunctionEnum cproto, int magic,
+                                   JSValue proto_val);
 JS_EXTERN JSValue JS_NewCFunctionData(JSContext *ctx, JSCFunctionData *func,
                                       int length, int magic, int data_len,
                                       JSValue *data);
