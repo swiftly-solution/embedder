@@ -4,6 +4,8 @@
 EValue returnValue(EValue val1, EValue val2, EValue callback) {
     callback(val1, val2);
 
+    fprintf(stdout, "%d, %d, %d\n", val1.isFunction(), val2.isBool(), val1.isNumber());
+
     int firstval = val1.cast<int>();
     int secondval = val2.cast<int>();
 

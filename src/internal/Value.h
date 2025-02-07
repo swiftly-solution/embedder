@@ -155,6 +155,87 @@ public:
         return cast<T>();
     }
 
+private:
+    int getLuaType() {
+        lua_State* L = (lua_State*)m_ctx->GetState();
+        lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
+        int type = lua_type(L, -1);
+        lua_pop(L, 1);
+        return type;
+    }
+    
+public:
+    bool isNull() {
+        if(m_ctx->GetKind() == ContextKinds::Lua) return getLuaType() == LUA_TNIL;
+        else if(m_ctx->GetKind() == ContextKinds::JavaScript) return JS_IsNull(m_val);
+        else return false;
+    }
+
+    bool isBool() {
+        if(m_ctx->GetKind() == ContextKinds::Lua) return getLuaType() == LUA_TBOOLEAN;
+        else if(m_ctx->GetKind() == ContextKinds::JavaScript) return JS_IsBool(m_val);
+        else return false;
+    }
+
+    bool isNumber() {
+        if(m_ctx->GetKind() == ContextKinds::Lua) return getLuaType() == LUA_TNUMBER;
+        else if(m_ctx->GetKind() == ContextKinds::JavaScript) return JS_IsNumber(m_val);
+        else return false;
+    }
+
+    bool isString() {
+        if(m_ctx->GetKind() == ContextKinds::Lua) return getLuaType() == LUA_TSTRING;
+        else if(m_ctx->GetKind() == ContextKinds::JavaScript) return JS_IsString(m_val);
+        else return false;
+    }
+
+    bool isTable() {
+        if(m_ctx->GetKind() == ContextKinds::Lua) return getLuaType() == LUA_TTABLE;
+        else if(m_ctx->GetKind() == ContextKinds::JavaScript) return JS_IsArray((JSContext*)m_ctx->GetState(), m_val) || JS_IsObject(m_val);
+        else return false;
+    }
+
+    bool isFunction() {
+        if(m_ctx->GetKind() == ContextKinds::Lua) return getLuaType() == LUA_TFUNCTION;
+        else if(m_ctx->GetKind() == ContextKinds::JavaScript) return JS_IsFunction((JSContext*)m_ctx->GetState(), m_val);
+        else return false;
+    }
+
+    template<class T>
+    EValue operator[](T value)
+    {
+        if(!isTable()) return *this;
+
+        if(m_ctx->GetKind() == ContextKinds::Lua) {
+            lua_State* L = (lua_State*)m_ctx->GetState();
+            lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
+            Stack<T>::pushLua(m_ctx, value);
+            lua_rawget(L, lua_absindex(L, -2));
+            return EValue(m_ctx, 0, true);
+        } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
+            JSContext* ctx = (JSContext*)m_ctx->GetState();
+            if constexpr (std::is_same<T, std::string>::value || std::is_same<T, const char*>::value || std::is_same<T, char*>::value) {
+                std::string val(value);
+                JSAtom at = JS_NewAtomString(ctx, val.c_str());
+                JSValue vl = JS_GetProperty(ctx, m_val, at);
+                JS_FreeAtom(ctx, at);
+                return EValue(m_ctx, vl);
+            } else if constexpr (
+                std::is_same<T, uint8_t>::value || std::is_same<T, int8_t>::value || std::is_same<T, uint16_t>::value || std::is_same<T, int16_t>::value ||
+                std::is_same<T, uint32_t>::value || std::is_same<T, int32_t>::value || std::is_same<T, uint64_t>::value || std::is_same<T, int64_t>::value
+            ) {
+                uint32_t val = (uint32_t)value;
+                JSAtom at = JS_NewAtomUInt32(ctx, val);
+                JSValue vl = JS_GetProperty(ctx, m_val, at);
+                JS_FreeAtom(ctx, at);
+                return EValue(m_ctx, vl);
+            } else {
+                fprintf(stdout, "Invalid type for array accessing. Returning the same value.\n");
+                return *this;
+            }
+        } else return *this;
+    }
+
     std::string tostring()
     {
         if(m_ctx->GetKind() == ContextKinds::Lua) {
