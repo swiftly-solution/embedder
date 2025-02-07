@@ -25,6 +25,7 @@ TEST_CASE("Lua Value", "[value]")
 
     const char* s = "print(retval(3, 4, function(a, b) print(a + b, a, b) end))";
     REQUIRE(ctx->RunCode(s) == 0);
+    REQUIRE(EValue::getGlobal(ctx, "retval").isFunction() == true);
 
     delete ctx;
 }
@@ -39,6 +40,8 @@ TEST_CASE("JavaScript Value", "[value]")
 
     const char* s = "console.log(retval(3, 4, (a, b) => { console.log(a + b, a, b) }))";
     REQUIRE(ctx->RunCode(s) == 0);
+
+    REQUIRE(EValue::getGlobal(ctx, "retval").isFunction() == true);
 
     delete ctx;
 }

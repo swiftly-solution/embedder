@@ -303,6 +303,23 @@ public:
         } else return EValue(m_ctx);
     }
 
+    static EValue getGlobal(EContext* ctx, std::string global_name)
+    {
+        if(ctx->GetKind() == ContextKinds::Lua) {
+            lua_State* L = (lua_State*)ctx->GetState();
+            lua_pushglobaltable(L);
+            rawgetfield(L, -1, global_name.c_str());
+            EValue val(ctx, 0, true);
+            lua_pop(L, 1);
+            return val;
+        } else if(ctx->GetKind() == ContextKinds::JavaScript) {
+            JSContext* ct = (JSContext*)ctx->GetState();
+            auto db = JS_GetGlobalObject(ct);
+            EValue val(ctx, JS_GetPropertyStr(ct, db, global_name.c_str()));
+            JS_FreeValue(ct, db);
+            return val;
+        } else return EValue(ctx);
+    }
 private:
     void pushLuaArguments() {}
 
