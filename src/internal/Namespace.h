@@ -234,6 +234,66 @@ public:
         return *this;
     }
 
+    template<class ReturnType, class... Params>
+    EClass<T> addLuaFunction(std::string name, ReturnType(T::*func)(Params...))
+    {
+        if(m_namespace->m_ctx->GetKind() != ContextKinds::Lua) return *this;
+
+        lua_State* L = static_cast<lua_State*>(m_namespace->m_ctx->GetState());
+
+        lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
+        lua_pushlightuserdata(L, reinterpret_cast<void*>(strtol(CHelpers::string_format("%p", func).c_str(), nullptr, 16)));
+        lua_pushcclosure(L, CHelpers::LuaCallFunction<ReturnType, T*, Params...>, 1);
+        rawsetfield(L, -2, name.c_str());
+        lua_pop(L, 1);
+
+        return *this;
+    }
+
+    EClass<T> addLuaFunction(std::string name, lua_CFunction func)
+    {
+        if(m_namespace->m_ctx->GetKind() != ContextKinds::Lua) return *this;
+
+        lua_State* L = static_cast<lua_State*>(m_namespace->m_ctx->GetState());
+
+        lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
+        lua_pushcfunction(L, func);
+        rawsetfield(L, -2, name.c_str());
+        lua_pop(L, 1);
+
+        return *this;
+    }
+
+    template<class ReturnType, class... Params>
+    EClass<T> addJSFunction(std::string name, ReturnType(T::*func)(Params...))
+    {
+        if(m_namespace->m_ctx->GetKind() != ContextKinds::JavaScript) return *this;
+
+        JSContext* ctx = (JSContext*)m_namespace->m_ctx->GetState();
+        JSClassID id = *getClassID<T>();
+        JSValue classProto = JS_GetClassProto(ctx, id);
+        JS_SetPropertyStr(
+            ctx, classProto, name.c_str(), 
+            JS_NewCFunctionData(ctx, CHelpers::JSCallClassFunction<ReturnType, T, Params...>, 0, 1, 1, (JSValue*)(CHelpers::string_format("%p", func).c_str()))
+        );
+        JS_SetClassProto(ctx, id, classProto);
+
+        return *this;
+    }
+
+    EClass<T> addJSFunction(std::string name, JSCFunction func)
+    {
+        if(m_namespace->m_ctx->GetKind() != ContextKinds::JavaScript) return *this;
+
+        JSContext* ctx = (JSContext*)m_namespace->m_ctx->GetState();
+        JSClassID id = *getClassID<T>();
+        JSValue classProto = JS_GetClassProto(ctx, id);
+        JS_SetPropertyStr(ctx, classProto, name.c_str(), func);
+        JS_SetClassProto(ctx, id, classProto);
+        
+        return *this;
+    }
+
     template<class PropType>
     EClass<T> addProperty(std::string name, PropType T::*member, bool writable = true) {
         typedef const PropType T::*mp_t;
