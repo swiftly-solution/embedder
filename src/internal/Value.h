@@ -216,7 +216,7 @@ public:
             JSContext* ctx = (JSContext*)m_ctx->GetState();
             if constexpr (std::is_same<T, std::string>::value || std::is_same<T, const char*>::value || std::is_same<T, char*>::value) {
                 std::string val(value);
-                JSAtom at = JS_NewAtomString(ctx, val.c_str());
+                JSAtom at = JS_NewAtom(ctx, val.c_str());
                 JSValue vl = JS_GetProperty(ctx, m_val, at);
                 JS_FreeAtom(ctx, at);
                 return EValue(m_ctx, vl);
