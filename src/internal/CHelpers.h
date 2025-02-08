@@ -397,12 +397,7 @@ public:
             .finalizer = JSGCFunction<T>,
         };
 
-        if (JS_NewClass(rt, id, &class_def) < 0)
-            return false;
-
-        JSValue proto = JS_NewObject(ctx);
-        JS_SetClassProto(ctx, id, proto);
-        return true;
+        return JS_NewClass(rt, id, &class_def) >= 0;
     }
 
     template<class T, typename... Params, std::size_t... I>

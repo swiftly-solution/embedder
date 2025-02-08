@@ -151,6 +151,8 @@ private:
     Namespace* m_namespace;
     int m_ref;
     JSValue m_constructor = JS_NULL;
+    JSValue m_proto = JS_NULL;
+    bool protoSet = false;
 
 protected:
     void createLuaConstTable(lua_State* L, const std::string& name, bool trueConst = true) {
@@ -187,6 +189,7 @@ public:
             m_ref = luaL_ref(L, LUA_REGISTRYINDEX);
         } else if(m_namespace->m_ctx->GetKind() == ContextKinds::JavaScript) {
             CHelpers::register_js_class<T>((JSContext*)m_namespace->m_ctx->GetState());
+            m_proto = JS_NewObject((JSContext*)m_namespace->m_ctx->GetState());
         }
     }
 
@@ -222,13 +225,10 @@ public:
             lua_pop(L, 1);
         } else if(m_namespace->m_ctx->GetKind() == ContextKinds::JavaScript) {
             JSContext* ctx = (JSContext*)m_namespace->m_ctx->GetState();
-            JSClassID id = *getClassID<T>();
-            JSValue classProto = JS_GetClassProto(ctx, id);
             JS_SetPropertyStr(
-                ctx, classProto, name.c_str(), 
+                ctx, m_proto, name.c_str(), 
                 JS_NewCFunctionData(ctx, CHelpers::JSCallClassFunction<ReturnType, T, Params...>, 0, 1, 1, (JSValue*)(CHelpers::string_format("%p", func).c_str()))
             );
-            JS_SetClassProto(ctx, id, classProto);
         }
 
         return *this;
@@ -270,13 +270,10 @@ public:
         if(m_namespace->m_ctx->GetKind() != ContextKinds::JavaScript) return *this;
 
         JSContext* ctx = (JSContext*)m_namespace->m_ctx->GetState();
-        JSClassID id = *getClassID<T>();
-        JSValue classProto = JS_GetClassProto(ctx, id);
         JS_SetPropertyStr(
-            ctx, classProto, name.c_str(), 
+            ctx, m_proto, name.c_str(), 
             JS_NewCFunctionData(ctx, CHelpers::JSCallClassFunction<ReturnType, T, Params...>, 0, 1, 1, (JSValue*)(CHelpers::string_format("%p", func).c_str()))
         );
-        JS_SetClassProto(ctx, id, classProto);
 
         return *this;
     }
@@ -286,10 +283,7 @@ public:
         if(m_namespace->m_ctx->GetKind() != ContextKinds::JavaScript) return *this;
 
         JSContext* ctx = (JSContext*)m_namespace->m_ctx->GetState();
-        JSClassID id = *getClassID<T>();
-        JSValue classProto = JS_GetClassProto(ctx, id);
-        JS_SetPropertyStr(ctx, classProto, name.c_str(), JS_NewCFunction(ctx, func, name.c_str(), 0));
-        JS_SetClassProto(ctx, id, classProto);
+        JS_SetPropertyStr(ctx, m_proto, name.c_str(), JS_NewCFunction(ctx, func, name.c_str(), 0));
         
         return *this;
     }
@@ -315,23 +309,19 @@ public:
             lua_pop(L, 1);
         } else if(m_namespace->m_ctx->GetKind() == ContextKinds::JavaScript) {
             JSContext* ctx = (JSContext*)m_namespace->m_ctx->GetState();
-            JSClassID id = *getClassID<T>();
-            JSValue classProto = JS_GetClassProto(ctx, id);
 
             JSAtom atom = JS_NewAtom(ctx, name.c_str());
 
             auto memb = new mp_t(member);
 
             JS_DefinePropertyGetSet(
-                ctx, classProto, atom,
+                ctx, m_proto, atom,
                 JS_NewCFunctionData(ctx, CHelpers::propClassGetter<T, PropType>, 0, 1, 1, (JSValue*)(CHelpers::string_format("%p", memb).c_str())),
                 writable ? JS_NewCFunctionData(ctx, CHelpers::propClassSetter<T, PropType>, 1, 1, 1, (JSValue*)(CHelpers::string_format("%p", memb).c_str())) : JS_UNDEFINED,
                 0
             );
 
             JS_FreeAtom(ctx, atom);
-
-            JS_SetClassProto(ctx, id, classProto);
         }
         return *this;
     }
@@ -366,12 +356,13 @@ public:
         JS_SetPropertyStr(jsctx, handler, "get", JS_NewCFunction(jsctx, jsindex, "get", 2));
         JS_SetPropertyStr(jsctx, handler, "set", JS_NewCFunction(jsctx, jsnewindex, "set", 3));
 
-        JSValue args[2] = { JS_NewObject(jsctx), handler };
+        JSValue args[2] = { m_proto, handler };
         JSValue proxy_obj = JS_CallConstructor(jsctx, proxy_ctor, 2, args);
 
         JS_FreeValue(jsctx, proxy_ctor);
         JS_FreeValue(jsctx, handler);
 
+        protoSet = true;
         JS_SetClassProto(jsctx, id, proxy_obj);
         return *this;
     }
@@ -387,6 +378,10 @@ public:
         } else if(m_namespace->m_ctx->GetKind() == ContextKinds::JavaScript) {
             JSContext* L = (JSContext*)m_namespace->m_ctx->GetState();
             if(!JS_IsNull(m_constructor)) JS_SetPropertyStr(L, m_namespace->m_ns, m_name.c_str(), m_constructor);
+            if(!protoSet) {
+                JSClassID id = *getClassID<T>();
+                JS_SetClassProto(L, id, m_proto);
+            }
         }
         return *m_namespace;
     }
