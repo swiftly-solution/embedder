@@ -288,7 +288,7 @@ public:
         JSContext* ctx = (JSContext*)m_namespace->m_ctx->GetState();
         JSClassID id = *getClassID<T>();
         JSValue classProto = JS_GetClassProto(ctx, id);
-        JS_SetPropertyStr(ctx, classProto, name.c_str(), func);
+        JS_SetPropertyStr(ctx, classProto, name.c_str(), JS_NewCFunction(ctx, func, name.c_str(), 0));
         JS_SetClassProto(ctx, id, classProto);
         
         return *this;
