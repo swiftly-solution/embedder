@@ -124,7 +124,7 @@ public:
             return ans;
         } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
             return Stack<T>::isJSInstance(m_ctx, m_val);
-        }
+        } else return false;
     }
 
     template<class T>
