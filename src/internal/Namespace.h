@@ -190,6 +190,8 @@ public:
         } else if(m_namespace->m_ctx->GetKind() == ContextKinds::JavaScript) {
             CHelpers::register_js_class<T>((JSContext*)m_namespace->m_ctx->GetState());
             m_proto = JS_NewObject((JSContext*)m_namespace->m_ctx->GetState());
+
+            JS_SetPropertyStr((JSContext*)m_namespace->m_ctx->GetState(), m_proto, "_className", Stack<std::string>::pushJS(m_namespace->m_ctx, typeid(T).name()));
         }
     }
 

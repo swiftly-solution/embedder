@@ -72,10 +72,10 @@ public:
             EContext* ictx = GetContextByState(ctx);
 
             if constexpr (std::is_same<ReturnType, void>::value) {
-                callFunctionImplClass<ReturnType, Params...>(ictx, Stack<T*>::getJS(ictx, this_obj), args, func, std::index_sequence_for<Params...>{});
+                callFunctionImplClass<ReturnType, T, Params...>(ictx, Stack<T*>::getJS(ictx, this_obj), args, func, std::index_sequence_for<Params...>{});
                 return JS_UNDEFINED;
             } else {
-                ReturnType val = callFunctionImplClass<ReturnType, Params...>(ictx, Stack<T*>::getJS(ictx, this_obj), args, func, std::index_sequence_for<Params...>{});
+                ReturnType val = callFunctionImplClass<ReturnType, T, Params...>(ictx, Stack<T*>::getJS(ictx, this_obj), args, func, std::index_sequence_for<Params...>{});
                 return Stack<ReturnType>::pushJS(ictx, val);
             }
         } catch(const std::exception& e) {

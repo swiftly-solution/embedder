@@ -8,6 +8,7 @@
 #include <map>
 #include <unordered_map>
 #include <utility>
+#include <typeinfo>
 
 #include "Context.h"
 #include "Helpers.h"
@@ -1209,7 +1210,8 @@ struct Stack<T*>
 
     static bool isJSInstance(EContext* ctx, JSValue value) {
         void* data = JS_GetOpaque2((JSContext*)ctx->GetState(), value, *getClassID<T>());
-        return data != nullptr;
+        if(data == nullptr) return false;
+        return getClassName((JSContext*)ctx->GetState(), value) == typeid(T).name();
     }
 };
 

@@ -4,6 +4,7 @@
 #include <lua.hpp>
 #include <quickjs.h>
 #include <cassert>
+#include <string>
 
 /************************************
 * All of the Lua Helpers were provided by LuaBridge 2.9. (https://github.com/vinniefalco/LuaBridge/tree/2.9)
@@ -177,6 +178,27 @@ static JSClassID* getClassID()
 {
     static JSClassID id;
     return &id;
+}
+
+inline std::string getClassName(JSContext *ctx, JSValue obj) {
+    if (!JS_IsObject(obj)) {
+        return "";
+    }
+
+    JSValue nameVal = JS_GetPropertyStr(ctx, obj, "_className");
+    if (JS_IsException(nameVal)) {
+        return "";
+    }
+
+    const char *className = JS_ToCString(ctx, nameVal);
+    std::string result;
+    if (className) {
+        result = className;
+        JS_FreeCString(ctx, className);
+    }
+    
+    JS_FreeValue(ctx, nameVal);
+    return result;
 }
 
 #endif
