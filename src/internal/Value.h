@@ -89,17 +89,17 @@ public:
         return JS_DupValue((JSContext*)m_ctx->GetState(), m_val);
     }
 
-    EValue& operator=(EValue& rhs)
+    EValue& operator=(EValue rhs)
     {
         EValue val(rhs);
         swap(val);
         return *this;
     }
-
+    
     template<class T>
-    EValue& operator=(T& rhs)
+    EValue& operator=(T rhs)
     {
-        EValue val(rhs, rhs);
+        EValue val(m_ctx, rhs);
         swap(val);
         return *this;
     }
@@ -138,7 +138,7 @@ public:
         } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
             return Stack<T>::getJS(m_ctx, m_val);
         } else {
-            return (T)0;
+            return *(T*)0;
         }
     }
 
@@ -214,25 +214,10 @@ public:
             return EValue(m_ctx, 0, true);
         } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
             JSContext* ctx = (JSContext*)m_ctx->GetState();
-            if constexpr (std::is_same<T, std::string>::value || std::is_same<T, const char*>::value || std::is_same<T, char*>::value) {
-                std::string val(value);
-                JSAtom at = JS_NewAtom(ctx, val.c_str());
-                JSValue vl = JS_GetProperty(ctx, m_val, at);
-                JS_FreeAtom(ctx, at);
-                return EValue(m_ctx, vl);
-            } else if constexpr (
-                std::is_same<T, uint8_t>::value || std::is_same<T, int8_t>::value || std::is_same<T, uint16_t>::value || std::is_same<T, int16_t>::value ||
-                std::is_same<T, uint32_t>::value || std::is_same<T, int32_t>::value || std::is_same<T, uint64_t>::value || std::is_same<T, int64_t>::value
-            ) {
-                uint32_t val = (uint32_t)value;
-                JSAtom at = JS_NewAtomUInt32(ctx, val);
-                JSValue vl = JS_GetProperty(ctx, m_val, at);
-                JS_FreeAtom(ctx, at);
-                return EValue(m_ctx, vl);
-            } else {
-                fprintf(stdout, "Invalid type for array accessing. Returning the same value.\n");
-                return *this;
-            }
+            JSAtom at = JS_ValueToAtom(ctx, Stack<T>::pushJS(m_ctx, value));
+            JSValue vl = JS_GetProperty(ctx, m_val, at);
+            JS_FreeAtom(ctx, at);
+            return EValue(m_ctx, vl);
         } else return *this;
     }
 
@@ -252,7 +237,7 @@ public:
             std::string out(value);
             JS_FreeCString(L, value);
             return out;
-        }
+        } else return "";
     }
 
     EContext* getContext()
@@ -320,11 +305,45 @@ public:
             return val;
         } else return EValue(ctx);
     }
+
+    template<class T>
+    bool operator==(T const& rhs) const
+    {
+        return true;
+    }
+
+    template<class T>
+    bool operator<(T const& rhs) const
+    {
+        return true;
+
+    }
+
+    template<class T>
+    bool operator<=(T const& rhs) const
+    {
+        return true;
+
+    }
+
+    template<class T>
+    bool operator>(T const& rhs) const
+    {
+        return true;
+
+    }
+
+    template<class T>
+    bool operator>=(T rhs) const
+    {
+        return true;
+    }
+
 private:
     void pushLuaArguments() {}
 
     template<typename T, typename... Params>
-    void pushLuaArguments(T& param, Params&&... params)
+    void pushLuaArguments(T param, Params... params)
     {
         Stack<T>::pushLua(m_ctx, param);
         pushLuaArguments(std::forward<Params>(params)...);

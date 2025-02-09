@@ -929,8 +929,11 @@ struct Stack<std::map<K, V>>
 
         typedef typename M::const_iterator ConstIter;
 
-        for(ConstIter it = value.begin(); it != value.end(); ++it)
-            JS_SetProperty(ct, arr, Stack<K>::pushJS(ctx, it->first), Stack<V>::pushJS(ctx, it->second));
+        for(ConstIter it = value.begin(); it != value.end(); ++it) {
+            JSAtom at = JS_ValueToAtom(ct, Stack<K>::pushJS(ctx, it->first));
+            JS_SetProperty(ct, arr, at, Stack<V>::pushJS(ctx, it->second));
+            JS_FreeAtom(ct, at);
+        }
 
         return arr;
     }
@@ -1219,6 +1222,62 @@ template<class T>
 struct Stack<T&>
 {
     static void pushLua(EContext* ctx, T& instance) {
+        Stack<T*>::pushLua(ctx, &instance);
+    }
+
+    static T& getLua(EContext* ctx, int index) {
+        return *Stack<T*>::getLua(ctx, index);
+    }
+
+    static bool isLuaInstance(EContext* ctx, int index) {
+        return Stack<T*>::isLuaInstance(ctx, index);
+    }
+
+    static JSValue pushJS(EContext* ctx, T& instance) {
+        return Stack<T*>::pushJS(ctx, &instance);
+    }
+
+    static T& getJS(EContext* ctx, JSValue value) {
+        return *Stack<T*>::getJS(ctx, value);
+    }
+
+    static bool isJSInstance(EContext* ctx, JSValue value) {
+        return Stack<T*>::isJSInstance(ctx, value);
+    }
+};
+
+template<class T>
+struct Stack: public Stack<T*>
+{
+    static void pushLua(EContext* ctx, T instance) {
+        Stack<T*>::pushLua(ctx, &instance);
+    }
+
+    static T getLua(EContext* ctx, int index) {
+        return *Stack<T*>::getLua(ctx, index);
+    }
+
+    static bool isLuaInstance(EContext* ctx, int index) {
+        return Stack<T*>::isLuaInstance(ctx, index);
+    }
+
+    static JSValue pushJS(EContext* ctx, T instance) {
+        return Stack<T*>::pushJS(ctx, &instance);
+    }
+
+    static T getJS(EContext* ctx, JSValue value) {
+        return *Stack<T*>::getJS(ctx, value);
+    }
+
+    static bool isJSInstance(EContext* ctx, JSValue value) {
+        return Stack<T*>::isJSInstance(ctx, value);
+    }
+};
+
+template<class T>
+struct Stack<const T&>
+{
+    static void pushLua(EContext* ctx, const T& instance) {
         Stack<T*>::pushLua(ctx, &instance);
     }
 
