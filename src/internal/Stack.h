@@ -1209,10 +1209,7 @@ struct Stack<T*>
 
     static bool isJSInstance(EContext* ctx, JSValue value) {
         void* data = JS_GetOpaque2((JSContext*)ctx->GetState(), value, *getClassID<T>());
-        if(dynamic_cast<T*>(data) != nullptr)
-            return true;
-
-        return false;
+        return data != nullptr;
     }
 };
 
