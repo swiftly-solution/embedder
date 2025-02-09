@@ -31,15 +31,15 @@ public:
     }
     
     template<class T>
-    EValue(EContext* ctx, T& value)
+    EValue(EContext* ctx, T value)
     {
         m_ctx = ctx;
         m_ctx->PushValue(this);
         if(ctx->GetKind() == ContextKinds::Lua) {
-            Stack<T&>::pushLua(ctx, value);
+            Stack<T>::pushLua(ctx, value);
             m_ref = luaL_ref((lua_State*)ctx->GetState(), LUA_REGISTRYINDEX);
         } else if(ctx->GetKind() == ContextKinds::JavaScript) {
-            m_val = Stack<T&>::pushJS(ctx, value);
+            m_val = Stack<T>::pushJS(ctx, value);
         }
     }
 
@@ -119,11 +119,11 @@ public:
     {
         if(m_ctx->GetKind() == ContextKinds::Lua) {
             pushLua();
-            bool ans = Stack<T&>::isLuaInstance(m_ctx, -1);
+            bool ans = Stack<T>::isLuaInstance(m_ctx, -1);
             lua_pop((lua_State*)m_ctx->GetState(), 1);
             return ans;
         } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
-            return Stack<T&>::isJSInstance(m_ctx, m_val);
+            return Stack<T>::isJSInstance(m_ctx, m_val);
         }
     }
 
@@ -132,13 +132,13 @@ public:
     {
         if(m_ctx->GetKind() == ContextKinds::Lua) {
             pushLua();
-            T val = Stack<T&>::getLua(m_ctx, -1);
+            T val = Stack<T>::getLua(m_ctx, -1);
             lua_pop((lua_State*)m_ctx->GetState(), 1);
             return val;
         } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
-            return Stack<T&>::getJS(m_ctx, m_val);
+            return Stack<T>::getJS(m_ctx, m_val);
         } else {
-            return *(T*)0;
+            return (T)0;
         }
     }
 
