@@ -76,7 +76,12 @@ public:
         }
     }
 
-    EValue(EValue& other) : m_ctx(other.m_ctx), m_ref(other.createRef()), m_val(other.createValue()) {}
+    EValue(EValue& other) {
+        m_ctx = other.m_ctx;
+        m_ctx->PushValue(this);
+        m_ref = other.createRef();
+        m_val = other.createValue();
+    }
 
     int createRef() {
         if(m_ctx->GetKind() != ContextKinds::Lua) return LUA_NOREF;
@@ -95,9 +100,24 @@ public:
         swap(val);
         return *this;
     }
+
+    EValue& operator=(EValue& rhs)
+    {
+        EValue val(rhs);
+        swap(val);
+        return *this;
+    }
     
     template<class T>
     EValue& operator=(T rhs)
+    {
+        EValue val(m_ctx, rhs);
+        swap(val);
+        return *this;
+    }
+
+    template<class T>
+    EValue& operator=(T& rhs)
     {
         EValue val(m_ctx, rhs);
         swap(val);
@@ -343,7 +363,7 @@ private:
     void pushLuaArguments() {}
 
     template<typename T, typename... Params>
-    void pushLuaArguments(T param, Params... params)
+    void pushLuaArguments(T& param, Params&&... params)
     {
         Stack<T>::pushLua(m_ctx, param);
         pushLuaArguments(std::forward<Params>(params)...);
