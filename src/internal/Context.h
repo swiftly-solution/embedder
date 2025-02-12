@@ -30,6 +30,7 @@ public:
     void* GetState();
 
     int RunCode(std::string code);
+    int RunFile(std::string path);
 
     void PushValue(EValue* val);
     void PopValue(EValue* val);

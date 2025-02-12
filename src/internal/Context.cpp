@@ -4,6 +4,7 @@
 #include "Value.h"
 
 #include <set>
+#include <filesystem>
 
 std::set<EContext*> ctxs;
 
@@ -104,6 +105,37 @@ int EContext::RunCode(std::string code)
         return cd;
     } else if(m_kind == ContextKinds::JavaScript) {
         auto res = JS_Eval((JSContext*)m_state, code.c_str(), code.length(), "runcode.js", JS_EVAL_TYPE_GLOBAL);
+        bool isException = JS_IsException(res);
+        JS_FreeValue((JSContext*)m_state, res);
+        return (int)isException;
+    } else return 0;
+}
+
+std::string files_Read(std::string path)
+{
+    if (!std::filesystem::exists(path))
+        return "";
+
+    auto fp = std::fopen(path.c_str(), "rb");
+    std::string s;
+    std::fseek(fp, 0u, SEEK_END);
+    auto size = std::ftell(fp);
+    std::fseek(fp, 0u, SEEK_SET);
+    s.resize(size);
+    std::fread(&s[0], 1u, size, fp);
+    std::fclose(fp);
+    return s;
+}
+
+int EContext::RunFile(std::string path)
+{
+    if(m_kind == ContextKinds::Lua) {
+        int cd = (luaL_dofile((lua_State*)m_state, path.c_str()));
+        if(cd != 0) EException::Throw(EException(GetState(), GetKind(), cd));
+        return cd;
+    } else if(m_kind == ContextKinds::JavaScript) {
+        std::string code = files_Read(path);
+        auto res = JS_Eval((JSContext*)m_state, code.c_str(), code.length(), path.c_str(), JS_EVAL_TYPE_GLOBAL);
         bool isException = JS_IsException(res);
         JS_FreeValue((JSContext*)m_state, res);
         return (int)isException;

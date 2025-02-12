@@ -94,13 +94,6 @@ public:
         return JS_DupValue((JSContext*)m_ctx->GetState(), m_val);
     }
 
-    EValue& operator=(EValue rhs)
-    {
-        EValue val(rhs);
-        swap(val);
-        return *this;
-    }
-
     EValue& operator=(EValue& rhs)
     {
         EValue val(rhs);
@@ -110,14 +103,6 @@ public:
     
     template<class T>
     EValue& operator=(T rhs)
-    {
-        EValue val(m_ctx, rhs);
-        swap(val);
-        return *this;
-    }
-
-    template<class T>
-    EValue& operator=(T& rhs)
     {
         EValue val(m_ctx, rhs);
         swap(val);
