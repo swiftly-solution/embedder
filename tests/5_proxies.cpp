@@ -28,11 +28,10 @@ TEST_CASE("Lua Proxy", "[proxies]")
 
     EContext* ctx = new EContext(ContextKinds::Lua);
 
-    GetGlobalNamespace(ctx)
-        .beginClass<SomeCls>("SomeCls")
-            .addConstructor<>()
-            .addLuaCustomIndex(luaCustomIndex, newluaCustomIndex)
-        .endClass();
+    BeginClass<SomeCls>("SomeCls", ctx)
+        .addConstructor<>()
+        .addLuaCustomIndex(luaCustomIndex, newluaCustomIndex)
+    .endClass();
 
     const char* s = "local cls = SomeCls(); print(cls.b); cls.b = 69420;";
 
@@ -62,11 +61,10 @@ TEST_CASE("JavaScript Proxy", "[proxies]")
 
     EContext* ctx = new EContext(ContextKinds::JavaScript);
 
-    GetGlobalNamespace(ctx)
-        .beginClass<SomeCls>("SomeCls")
-            .addConstructor<>()
-            .addJSCustomIndex(jsIndexProxy, jsNewIndexProxy)
-        .endClass();
+    BeginClass<SomeCls>("SomeCls", ctx)
+        .addConstructor<>()
+        .addJSCustomIndex(jsIndexProxy, jsNewIndexProxy)
+    .endClass();
 
     const char* s = "let cls = SomeCls(); console.log(cls.b); cls.b = 69420;";
 

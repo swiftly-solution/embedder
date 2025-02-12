@@ -135,12 +135,6 @@ public:
         );
         return *this;
     }
-
-    template<class T>
-    EClass<T> beginClass(std::string name)
-    {
-        return EClass<T>(name, this);
-    }
 };
 
 template<class T>
@@ -148,7 +142,7 @@ class EClass
 {
 private:
     std::string m_name;
-    Namespace* m_namespace;
+    EContext* m_ctx;
     int m_ref;
     JSValue m_constructor = JS_NULL;
     JSValue m_proto = JS_NULL;
@@ -175,31 +169,31 @@ protected:
     }
 
 public:
-    EClass(std::string name, Namespace* nmsp)
+    EClass(std::string name, EContext* ctx)
     {
         m_name = name;
-        m_namespace = nmsp;
+        m_ctx = ctx;
 
-        if(m_namespace->m_ctx->GetKind() == ContextKinds::Lua) {
-            lua_State* L = (lua_State*)m_namespace->m_ctx->GetState();
+        if(m_ctx->GetKind() == ContextKinds::Lua) {
+            lua_State* L = (lua_State*)m_ctx->GetState();
 
             lua_newtable(L);
             createLuaConstTable(L, name);
 
             m_ref = luaL_ref(L, LUA_REGISTRYINDEX);
-        } else if(m_namespace->m_ctx->GetKind() == ContextKinds::JavaScript) {
-            CHelpers::register_js_class<T>((JSContext*)m_namespace->m_ctx->GetState());
-            m_proto = JS_NewObject((JSContext*)m_namespace->m_ctx->GetState());
+        } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
+            CHelpers::register_js_class<T>((JSContext*)m_ctx->GetState());
+            m_proto = JS_NewObject((JSContext*)m_ctx->GetState());
 
-            JS_SetPropertyStr((JSContext*)m_namespace->m_ctx->GetState(), m_proto, "_className", Stack<std::string>::pushJS(m_namespace->m_ctx, typeid(T).name()));
+            JS_SetPropertyStr((JSContext*)m_ctx->GetState(), m_proto, "_className", Stack<std::string>::pushJS(m_ctx, typeid(T).name()));
         }
     }
 
     template<class... Params>
     EClass<T> addConstructor()
     {
-        if(m_namespace->m_ctx->GetKind() == ContextKinds::Lua) {
-            lua_State* L = (lua_State*)m_namespace->m_ctx->GetState();
+        if(m_ctx->GetKind() == ContextKinds::Lua) {
+            lua_State* L = (lua_State*)m_ctx->GetState();
             lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
 
             lua_newtable(L);
@@ -208,8 +202,8 @@ public:
             lua_setmetatable(L, -2);
 
             lua_pop(L, 1);
-        } else if(m_namespace->m_ctx->GetKind() == ContextKinds::JavaScript) {
-            JSContext* ctx = static_cast<JSContext*>(m_namespace->m_ctx->GetState());
+        } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
+            JSContext* ctx = static_cast<JSContext*>(m_ctx->GetState());
             m_constructor = JS_NewCFunctionData(ctx, &CHelpers::js_dynamic_constructor<T, Params...>, sizeof...(Params), 1, 1, (JSValue*)(m_name.c_str()));
         }
         return *this;
@@ -217,16 +211,16 @@ public:
 
     template<class ReturnType, class... Params>
     EClass<T> addFunction(std::string name, ReturnType (*func)(T*, Params...)) {
-        if(m_namespace->m_ctx->GetKind() == ContextKinds::Lua) {
-            lua_State* L = static_cast<lua_State*>(m_namespace->m_ctx->GetState());
+        if(m_ctx->GetKind() == ContextKinds::Lua) {
+            lua_State* L = static_cast<lua_State*>(m_ctx->GetState());
 
             lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
             lua_pushlightuserdata(L, reinterpret_cast<void*>(strtol(CHelpers::string_format("%p", func).c_str(), nullptr, 16)));
             lua_pushcclosure(L, CHelpers::LuaCallFunction<ReturnType, T*, Params...>, 1);
             rawsetfield(L, -2, name.c_str());
             lua_pop(L, 1);
-        } else if(m_namespace->m_ctx->GetKind() == ContextKinds::JavaScript) {
-            JSContext* ctx = (JSContext*)m_namespace->m_ctx->GetState();
+        } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
+            JSContext* ctx = (JSContext*)m_ctx->GetState();
             JS_SetPropertyStr(
                 ctx, m_proto, name.c_str(), 
                 JS_NewCFunctionData(ctx, CHelpers::JSCallClassFunction<ReturnType, T, Params...>, 0, 1, 1, (JSValue*)(CHelpers::string_format("%p", func).c_str()))
@@ -238,16 +232,16 @@ public:
 
     template<class ReturnType, class... Params>
     EClass<T> addFunction(std::string name, ReturnType(T::*func)(Params...) const) {
-        if(m_namespace->m_ctx->GetKind() == ContextKinds::Lua) {
-            lua_State* L = static_cast<lua_State*>(m_namespace->m_ctx->GetState());
+        if(m_ctx->GetKind() == ContextKinds::Lua) {
+            lua_State* L = static_cast<lua_State*>(m_ctx->GetState());
 
             lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
             lua_pushlightuserdata(L, reinterpret_cast<void*>(strtol(CHelpers::string_format("%p", func).c_str(), nullptr, 16)));
             lua_pushcclosure(L, CHelpers::LuaCallFunction<ReturnType, T*, Params...>, 1);
             rawsetfield(L, -2, name.c_str());
             lua_pop(L, 1);
-        } else if(m_namespace->m_ctx->GetKind() == ContextKinds::JavaScript) {
-            JSContext* ctx = (JSContext*)m_namespace->m_ctx->GetState();
+        } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
+            JSContext* ctx = (JSContext*)m_ctx->GetState();
             JS_SetPropertyStr(
                 ctx, m_proto, name.c_str(), 
                 JS_NewCFunctionData(ctx, CHelpers::JSCallClassFunction<ReturnType, T, Params...>, 0, 1, 1, (JSValue*)(CHelpers::string_format("%p", func).c_str()))
@@ -259,16 +253,16 @@ public:
 
     template<class ReturnType, class... Params>
     EClass<T> addFunction(std::string name, ReturnType(T::*func)(Params...)) {
-        if(m_namespace->m_ctx->GetKind() == ContextKinds::Lua) {
-            lua_State* L = static_cast<lua_State*>(m_namespace->m_ctx->GetState());
+        if(m_ctx->GetKind() == ContextKinds::Lua) {
+            lua_State* L = static_cast<lua_State*>(m_ctx->GetState());
 
             lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
             lua_pushlightuserdata(L, reinterpret_cast<void*>(strtol(CHelpers::string_format("%p", func).c_str(), nullptr, 16)));
             lua_pushcclosure(L, CHelpers::LuaCallFunction<ReturnType, T*, Params...>, 1);
             rawsetfield(L, -2, name.c_str());
             lua_pop(L, 1);
-        } else if(m_namespace->m_ctx->GetKind() == ContextKinds::JavaScript) {
-            JSContext* ctx = (JSContext*)m_namespace->m_ctx->GetState();
+        } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
+            JSContext* ctx = (JSContext*)m_ctx->GetState();
             JS_SetPropertyStr(
                 ctx, m_proto, name.c_str(), 
                 JS_NewCFunctionData(ctx, CHelpers::JSCallClassFunction<ReturnType, T, Params...>, 0, 1, 1, (JSValue*)(CHelpers::string_format("%p", func).c_str()))
@@ -281,9 +275,9 @@ public:
     template<class ReturnType, class... Params>
     EClass<T> addLuaFunction(std::string name, ReturnType(T::*func)(Params...))
     {
-        if(m_namespace->m_ctx->GetKind() != ContextKinds::Lua) return *this;
+        if(m_ctx->GetKind() != ContextKinds::Lua) return *this;
 
-        lua_State* L = static_cast<lua_State*>(m_namespace->m_ctx->GetState());
+        lua_State* L = static_cast<lua_State*>(m_ctx->GetState());
 
         lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
         lua_pushlightuserdata(L, reinterpret_cast<void*>(strtol(CHelpers::string_format("%p", func).c_str(), nullptr, 16)));
@@ -296,9 +290,9 @@ public:
 
     EClass<T> addLuaFunction(std::string name, lua_CFunction func)
     {
-        if(m_namespace->m_ctx->GetKind() != ContextKinds::Lua) return *this;
+        if(m_ctx->GetKind() != ContextKinds::Lua) return *this;
 
-        lua_State* L = static_cast<lua_State*>(m_namespace->m_ctx->GetState());
+        lua_State* L = static_cast<lua_State*>(m_ctx->GetState());
 
         lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
         lua_pushcfunction(L, func);
@@ -311,9 +305,9 @@ public:
     template<class ReturnType, class... Params>
     EClass<T> addJSFunction(std::string name, ReturnType(T::*func)(Params...))
     {
-        if(m_namespace->m_ctx->GetKind() != ContextKinds::JavaScript) return *this;
+        if(m_ctx->GetKind() != ContextKinds::JavaScript) return *this;
 
-        JSContext* ctx = (JSContext*)m_namespace->m_ctx->GetState();
+        JSContext* ctx = (JSContext*)m_ctx->GetState();
         JS_SetPropertyStr(
             ctx, m_proto, name.c_str(), 
             JS_NewCFunctionData(ctx, CHelpers::JSCallClassFunction<ReturnType, T, Params...>, 0, 1, 1, (JSValue*)(CHelpers::string_format("%p", func).c_str()))
@@ -324,9 +318,9 @@ public:
 
     EClass<T> addJSFunction(std::string name, JSCFunction func)
     {
-        if(m_namespace->m_ctx->GetKind() != ContextKinds::JavaScript) return *this;
+        if(m_ctx->GetKind() != ContextKinds::JavaScript) return *this;
 
-        JSContext* ctx = (JSContext*)m_namespace->m_ctx->GetState();
+        JSContext* ctx = (JSContext*)m_ctx->GetState();
         JS_SetPropertyStr(ctx, m_proto, name.c_str(), JS_NewCFunction(ctx, func, name.c_str(), 0));
         
         return *this;
@@ -335,8 +329,8 @@ public:
     template<class PropType>
     EClass<T> addProperty(std::string name, PropType T::*member, bool writable = true) {
         typedef const PropType T::*mp_t;
-        if(m_namespace->m_ctx->GetKind() == ContextKinds::Lua) {
-            lua_State* L = static_cast<lua_State*>(m_namespace->m_ctx->GetState());
+        if(m_ctx->GetKind() == ContextKinds::Lua) {
+            lua_State* L = static_cast<lua_State*>(m_ctx->GetState());
 
             lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
 
@@ -351,8 +345,8 @@ public:
                 CHelpers::addSetter(L, name.c_str(), -2);
             }
             lua_pop(L, 1);
-        } else if(m_namespace->m_ctx->GetKind() == ContextKinds::JavaScript) {
-            JSContext* ctx = (JSContext*)m_namespace->m_ctx->GetState();
+        } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
+            JSContext* ctx = (JSContext*)m_ctx->GetState();
 
             JSAtom atom = JS_NewAtom(ctx, name.c_str());
 
@@ -372,8 +366,8 @@ public:
 
     EClass<T> addLuaCustomIndex(lua_CFunction index, lua_CFunction newindex)
     {
-        if(m_namespace->m_ctx->GetKind() != ContextKinds::Lua) return *this;
-        lua_State* L = (lua_State*)m_namespace->m_ctx->GetState();
+        if(m_ctx->GetKind() != ContextKinds::Lua) return *this;
+        lua_State* L = (lua_State*)m_ctx->GetState();
 
         lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
         lua_pushcfunction(L, index);
@@ -387,8 +381,8 @@ public:
 
     EClass<T> addJSCustomIndex(JSCFunction jsindex, JSCFunction jsnewindex)
     {
-        if(m_namespace->m_ctx->GetKind() != ContextKinds::JavaScript) return *this;
-        JSContext* jsctx = (JSContext*)m_namespace->m_ctx->GetState();
+        if(m_ctx->GetKind() != ContextKinds::JavaScript) return *this;
+        JSContext* jsctx = (JSContext*)m_ctx->GetState();
         
         JSClassID id = *getClassID<T>();
 
@@ -411,26 +405,31 @@ public:
         return *this;
     }
 
-    Namespace endClass()
+    void endClass()
     {
-        if(m_namespace->m_ctx->GetKind() == ContextKinds::Lua) {
-            lua_State* L = (lua_State*)m_namespace->m_ctx->GetState();
-            lua_rawgeti(L, LUA_REGISTRYINDEX, m_namespace->m_ref);
+        if(m_ctx->GetKind() == ContextKinds::Lua) {
+            lua_State* L = (lua_State*)m_ctx->GetState();
+            lua_pushglobaltable(L);
             lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
             rawsetfield(L, -2, m_name.c_str());
             lua_pop(L, 1);
-        } else if(m_namespace->m_ctx->GetKind() == ContextKinds::JavaScript) {
-            JSContext* L = (JSContext*)m_namespace->m_ctx->GetState();
-            if(!JS_IsNull(m_constructor)) JS_SetPropertyStr(L, m_namespace->m_ns, m_name.c_str(), m_constructor);
+        } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
+            JSContext* L = (JSContext*)m_ctx->GetState();
+            if(!JS_IsNull(m_constructor)) JS_SetPropertyStr(L, JS_GetGlobalObject((JSContext*)(m_ctx->GetState())), m_name.c_str(), m_constructor);
             if(!protoSet) {
                 JSClassID id = *getClassID<T>();
                 JS_SetClassProto(L, id, m_proto);
             }
         }
-        return *m_namespace;
     }
 };
 
 Namespace GetGlobalNamespace(EContext* ctx);
+
+template<class T>
+EClass<T> BeginClass(std::string name, EContext* ctx)
+{
+    return EClass<T>(name, ctx);
+}
 
 #endif

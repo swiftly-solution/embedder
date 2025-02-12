@@ -19,12 +19,11 @@ TEST_CASE("Lua Class", "[classes]")
 
     EContext* ctx = new EContext(ContextKinds::Lua);
 
-    GetGlobalNamespace(ctx)
-        .beginClass<SomeClass>("SomeClass")
-            .addConstructor<int>()
-            .addFunction("printIt", &SomeClass::printA)
-            .addProperty("b", &SomeClass::m_b)
-        .endClass();
+    BeginClass<SomeClass>("SomeClass", ctx)
+        .addConstructor<int>()
+        .addFunction("printIt", &SomeClass::printA)
+        .addProperty("b", &SomeClass::m_b)
+    .endClass();
 
     const char* s = "local cls = SomeClass(69); local cls2 = SomeClass(420); cls2:printIt(cls2); cls2.b = 69420; cls2:printIt(cls2); cls:printIt(cls2); print(cls.b)";
 
@@ -39,12 +38,11 @@ TEST_CASE("JavaScript Class", "[classes]")
 
     EContext* ctx = new EContext(ContextKinds::JavaScript);
 
-    GetGlobalNamespace(ctx)
-        .beginClass<SomeClass>("SomeClass")
-            .addConstructor<int>()
-            .addFunction("printIt", &SomeClass::printA)
-            .addProperty("b", &SomeClass::m_b)
-        .endClass();
+    BeginClass<SomeClass>("SomeClass", ctx)
+        .addConstructor<int>()
+        .addFunction("printIt", &SomeClass::printA)
+        .addProperty("b", &SomeClass::m_b)
+    .endClass();
 
     const char* s = "let cls = SomeClass(69); let cls2 = SomeClass(420); cls2.printIt(cls); cls2.b = 69420; cls2.printIt(cls); cls.printIt(cls); console.log(cls.b)";
     REQUIRE(ctx->RunCode(s) == 0);
