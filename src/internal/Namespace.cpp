@@ -68,13 +68,6 @@ Namespace::Namespace(EContext* ctx, std::string name, Namespace *parent)
 Namespace::~Namespace()
 {
     if(m_ctx->GetKind() == ContextKinds::Lua) luaL_unref((lua_State*)m_ctx->GetState(), LUA_REGISTRYINDEX, m_ref);
-    
-    if(!m_parent) {
-        if(m_ctx->GetKind() == ContextKinds::Lua) {}
-        else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
-            JS_FreeValue((JSContext*)m_ctx->GetState(), m_ns);
-        }
-    }
 }
 
 Namespace Namespace::beginNamespace(std::string nsName)

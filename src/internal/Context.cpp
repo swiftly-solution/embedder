@@ -33,6 +33,8 @@ EContext::EContext(ContextKinds kind)
         for (; lib->func; lib++) RegisterLuaLib(lib->name, lib->func);
     } else if(kind == ContextKinds::JavaScript) {
         JSRuntime* rt = JS_NewRuntime();
+        JS_SetMemoryLimit(rt, 1024 * 1024 * 500); 
+        JS_SetMaxStackSize(rt, 1024 * 1024 * 10);
         JSContext* ctx = JS_NewContext(rt);
 
         JSValue global_obj = JS_GetGlobalObject(ctx);
