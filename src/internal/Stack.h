@@ -12,6 +12,7 @@
 
 #include "Context.h"
 #include "Helpers.h"
+#include "GarbageCollector.h"
 
 template<class T>
 struct Stack;
@@ -1174,8 +1175,10 @@ struct Stack<std::pair<T1, T2>>
 template<class T>
 struct Stack<T*>
 {
-    static void pushLua(EContext* ctx, T* instance) {
+    static void pushLua(EContext* ctx, T* instance, bool shouldDeleteOnGC = false) {
         lua_State* L = (lua_State*)ctx->GetState();
+
+        if(shouldDeleteOnGC) MarkDeleteOnGC((void*)instance);
         
         T** userdata = (T**)lua_newuserdata(L, sizeof(T*));
         *userdata = instance;
@@ -1196,23 +1199,26 @@ struct Stack<T*>
         return userdata != nullptr;
     }
 
-    static JSValue pushJS(EContext* ctx, T* instance) {
+    static JSValue pushJS(EContext* ctx, T* instance, bool shouldDeleteOnGC = false) {
         JSContext* L = (JSContext*)ctx->GetState();
 
-        JSClassID& id = *getClassID<T>();
+        JSClassID& id = *(ctx->GetClassID(typeid(T).name()));
         JSValue proto = JS_GetClassProto(L, id);
         JSValue ret = JS_NewObjectProtoClass(L, proto, id);
 
-        if(!JS_IsException(ret)) JS_SetOpaque(ret, instance);
+        if(!JS_IsException(ret)) {
+            if(shouldDeleteOnGC) MarkDeleteOnGC((void*)instance);
+            JS_SetOpaque(ret, instance);
+        }
         return ret;
     }
 
     static T* getJS(EContext* ctx, JSValue value) {
-        return (T*)JS_GetOpaque2((JSContext*)ctx->GetState(), value, *getClassID<T>());
+        return (T*)JS_GetOpaque2((JSContext*)ctx->GetState(), value, JS_GetClassID(value));
     }
 
     static bool isJSInstance(EContext* ctx, JSValue value) {
-        void* data = JS_GetOpaque2((JSContext*)ctx->GetState(), value, *getClassID<T>());
+        void* data = JS_GetOpaque2((JSContext*)ctx->GetState(), value, JS_GetClassID(value));
         if(data == nullptr) return false;
         return getClassName((JSContext*)ctx->GetState(), value) == typeid(T).name();
     }
@@ -1222,7 +1228,7 @@ template<class T>
 struct Stack<T&>
 {
     static void pushLua(EContext* ctx, T& instance) {
-        Stack<T*>::pushLua(ctx, &instance);
+        Stack<T*>::pushLua(ctx, new T(instance), true);
     }
 
     static T& getLua(EContext* ctx, int index) {
@@ -1234,7 +1240,7 @@ struct Stack<T&>
     }
 
     static JSValue pushJS(EContext* ctx, T& instance) {
-        return Stack<T*>::pushJS(ctx, &instance);
+        return Stack<T*>::pushJS(ctx, new T(instance), true);
     }
 
     static T& getJS(EContext* ctx, JSValue value) {
@@ -1250,7 +1256,7 @@ template<class T>
 struct Stack: public Stack<T*>
 {
     static void pushLua(EContext* ctx, T instance) {
-        Stack<T*>::pushLua(ctx, &instance);
+        Stack<T*>::pushLua(ctx, new T(instance), true);
     }
 
     static T getLua(EContext* ctx, int index) {
@@ -1262,7 +1268,7 @@ struct Stack: public Stack<T*>
     }
 
     static JSValue pushJS(EContext* ctx, T instance) {
-        return Stack<T*>::pushJS(ctx, &instance);
+        return Stack<T*>::pushJS(ctx, new T(instance), true);
     }
 
     static T getJS(EContext* ctx, JSValue value) {
@@ -1278,7 +1284,7 @@ template<class T>
 struct Stack<const T&>
 {
     static void pushLua(EContext* ctx, const T& instance) {
-        Stack<T*>::pushLua(ctx, &instance);
+        Stack<T*>::pushLua(ctx, new T(instance), true);
     }
 
     static T& getLua(EContext* ctx, int index) {
@@ -1290,7 +1296,7 @@ struct Stack<const T&>
     }
 
     static JSValue pushJS(EContext* ctx, T& instance) {
-        return Stack<T*>::pushJS(ctx, &instance);
+        return Stack<T*>::pushJS(ctx, new T(instance), true);
     }
 
     static T& getJS(EContext* ctx, JSValue value) {

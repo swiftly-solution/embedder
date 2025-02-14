@@ -147,6 +147,7 @@ private:
     JSValue m_constructor = JS_NULL;
     JSValue m_proto = JS_NULL;
     bool protoSet = false;
+    JSClassID id;
 
 protected:
     void createLuaConstTable(lua_State* L, const std::string& name, bool trueConst = true) {
@@ -182,7 +183,9 @@ public:
 
             m_ref = luaL_ref(L, LUA_REGISTRYINDEX);
         } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
-            CHelpers::register_js_class<T>((JSContext*)m_ctx->GetState());
+            CHelpers::register_js_class<T>(m_ctx);
+            id = *(m_ctx->GetClassID(typeid(T).name()));
+
             m_proto = JS_NewObject((JSContext*)m_ctx->GetState());
 
             JS_SetPropertyStr((JSContext*)m_ctx->GetState(), m_proto, "_className", Stack<std::string>::pushJS(m_ctx, typeid(T).name()));
@@ -384,8 +387,6 @@ public:
         if(m_ctx->GetKind() != ContextKinds::JavaScript) return *this;
         JSContext* jsctx = (JSContext*)m_ctx->GetState();
         
-        JSClassID id = *getClassID<T>();
-
         JSValue global_obj = JS_GetGlobalObject(jsctx);
         JSValue proxy_ctor = JS_GetPropertyStr(jsctx, global_obj, "Proxy");
         JS_FreeValue(jsctx, global_obj);
@@ -417,7 +418,6 @@ public:
             JSContext* L = (JSContext*)m_ctx->GetState();
             if(!JS_IsNull(m_constructor)) JS_SetPropertyStr(L, JS_GetGlobalObject((JSContext*)(m_ctx->GetState())), m_name.c_str(), m_constructor);
             if(!protoSet) {
-                JSClassID id = *getClassID<T>();
                 JS_SetClassProto(L, id, m_proto);
             }
         }

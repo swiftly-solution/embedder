@@ -2,6 +2,7 @@
 #define _embedding_internal_context_h
 
 #include <set>
+#include <map>
 #include <string>
 
 #include <lua.hpp>
@@ -18,6 +19,7 @@ private:
     void* m_state;
     ContextKinds m_kind;
     std::set<EValue*> mappedValues;
+    std::map<std::string, JSClassID> classIDs;
 
 public:
     EContext(ContextKinds kind);
@@ -34,6 +36,8 @@ public:
 
     void PushValue(EValue* val);
     void PopValue(EValue* val);
+
+    JSClassID* GetClassID(std::string className);
 };
 
 EContext* GetContextByState(JSRuntime* rt);

@@ -173,13 +173,6 @@ void const* getConstRegistryKey()
 
 uint32_t JSGetArrayLength(JSContext* ctx, JSValue val);
 
-template<class T>
-static JSClassID* getClassID()
-{
-    static JSClassID id;
-    return &id;
-}
-
 inline std::string getClassName(JSContext *ctx, JSValue obj) {
     if (!JS_IsObject(obj)) {
         return "";

@@ -9,6 +9,7 @@
 #include "Context.h"
 #include "Stack.h"
 #include "Invoker.h"
+#include "GarbageCollector.h"
 
 template <typename R, typename ... Params> constexpr size_t getArgumentCount( R(*f)(Params ...))
 {
@@ -353,7 +354,7 @@ public:
     {
         T** udata = (T**)lua_touserdata(L, 1);
         if(udata && *udata) {
-            delete *udata;
+            if(CheckAndPopDeleteOnGC((void*)*udata)) delete *udata;
             *udata = nullptr;
         }
         return 0;
@@ -380,14 +381,17 @@ public:
     {
         auto ctx = GetContextByState(rt);
         if(!ctx) return;
-        auto opaque = JS_GetOpaque2((JSContext*)ctx->GetState(), val, *getClassID<T>());
+        auto opaque = JS_GetOpaque2((JSContext*)ctx->GetState(), val, JS_GetClassID(val));
         T* ptr = (T*)opaque;
-        if(ptr) delete ptr;
+
+        if(ptr && CheckAndPopDeleteOnGC((void*)ptr))
+            delete ptr;
     }
     
     template<class T>
-    static bool register_js_class(JSContext* ctx) {
-        JSClassID& id = *getClassID<T>();
+    static bool register_js_class(EContext* ct) {
+        JSContext* ctx = (JSContext*)ct->GetState();
+        JSClassID& id = *(ct->GetClassID(typeid(T).name()));
         if(id != 0) return false;
 
         JSRuntime* rt = JS_GetRuntime(ctx);
@@ -410,8 +414,8 @@ public:
     static JSValue js_dynamic_constructor(JSContext *ctx, JSValue this_val, int argc, JSValue *argv, int magic, JSValue *func_data)
     {
         T* ptr = construct_js_helper<T, Params...>(ctx, argv, std::index_sequence_for<Params...>{});
-        
-        JSClassID& id = *getClassID<T>();
+
+        JSClassID& id = *(GetContextByState(ctx)->GetClassID(typeid(T).name()));
         JSValue proto = JS_GetClassProto(ctx, id);
         JSValue ret = JS_NewObjectProtoClass(ctx, proto, id);
 
