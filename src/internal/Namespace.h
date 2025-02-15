@@ -291,6 +291,22 @@ public:
         return *this;
     }
 
+    template<class ReturnType, class... Params>
+    EClass<T> addLuaFunction(std::string name, ReturnType (*func)(T*, Params...))
+    {
+        if(m_ctx->GetKind() != ContextKinds::Lua) return *this;
+
+        lua_State* L = static_cast<lua_State*>(m_ctx->GetState());
+
+        lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
+        lua_pushlightuserdata(L, reinterpret_cast<void*>(strtol(CHelpers::string_format("%p", func).c_str(), nullptr, 16)));
+        lua_pushcclosure(L, CHelpers::LuaCallFunction<ReturnType, T*, Params...>, 1);
+        rawsetfield(L, -2, name.c_str());
+        lua_pop(L, 1);
+
+        return *this;
+    }
+
     EClass<T> addLuaFunction(std::string name, lua_CFunction func)
     {
         if(m_ctx->GetKind() != ContextKinds::Lua) return *this;
@@ -307,6 +323,20 @@ public:
 
     template<class ReturnType, class... Params>
     EClass<T> addJSFunction(std::string name, ReturnType(T::*func)(Params...))
+    {
+        if(m_ctx->GetKind() != ContextKinds::JavaScript) return *this;
+
+        JSContext* ctx = (JSContext*)m_ctx->GetState();
+        JS_SetPropertyStr(
+            ctx, m_proto, name.c_str(), 
+            JS_NewCFunctionData(ctx, CHelpers::JSCallClassFunction<ReturnType, T, Params...>, 0, 1, 1, (JSValue*)(CHelpers::string_format("%p", func).c_str()))
+        );
+
+        return *this;
+    }
+
+    template<class ReturnType, class... Params>
+    EClass<T> addJSFunction(std::string name, ReturnType (*func)(T*, Params...))
     {
         if(m_ctx->GetKind() != ContextKinds::JavaScript) return *this;
 

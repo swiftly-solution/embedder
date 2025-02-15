@@ -239,11 +239,13 @@ public:
             return str;
         } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
             JSContext* L = (JSContext*)m_ctx->GetState();
-            
-            std::string className = getClassName(L, m_val);
-            if(className != "") return className;
 
             auto value = JS_ToCString(L, m_val);
+            if(value == nullptr) {
+                std::string className = getClassName(L, m_val);
+                if(className != "") return className;
+            }
+
             std::string out(value);
             JS_FreeCString(L, value);
             return out;
