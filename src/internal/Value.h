@@ -370,7 +370,7 @@ struct Stack<EValue>
 
     static JSValue pushJS(EContext* ctx, EValue value)
     {
-        return value.pushJS();
+        return JS_DupValue((JSContext*)ctx->GetState(), value.pushJS());
     }
 
     static EValue getLua(EContext* ctx, int ref)

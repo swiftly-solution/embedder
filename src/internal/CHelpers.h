@@ -379,9 +379,7 @@ public:
     template<class T>
     static void JSGCFunction(JSRuntime* rt, JSValue val)
     {
-        auto ctx = GetContextByState(rt);
-        if(!ctx) return;
-        auto opaque = JS_GetOpaque2((JSContext*)ctx->GetState(), val, JS_GetClassID(val));
+        auto opaque = JS_GetOpaque(val, JS_GetClassID(val));
         T* ptr = (T*)opaque;
 
         if(ptr && CheckAndPopDeleteOnGC((void*)ptr))

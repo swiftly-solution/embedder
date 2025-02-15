@@ -21,6 +21,8 @@ static const luaL_Reg lualibs[] = {
     {NULL, NULL},
 };
 
+JSRuntime* rt = nullptr;
+
 EContext::EContext(ContextKinds kind)
 {
     m_kind = kind;
@@ -32,9 +34,7 @@ EContext::EContext(ContextKinds kind)
         const luaL_Reg* lib = lualibs;
         for (; lib->func; lib++) RegisterLuaLib(lib->name, lib->func);
     } else if(kind == ContextKinds::JavaScript) {
-        JSRuntime* rt = JS_NewRuntime();
-        JS_SetMemoryLimit(rt, 1024 * 1024 * 500); 
-        JS_SetMaxStackSize(rt, 1024 * 1024 * 10);
+        if(rt == nullptr) rt = JS_NewRuntime();
         JSContext* ctx = JS_NewContext(rt);
 
         JSValue global_obj = JS_GetGlobalObject(ctx);
@@ -67,10 +67,8 @@ EContext::~EContext()
         lua_close((lua_State*)m_state);
     } else if(m_kind == ContextKinds::JavaScript) {
         JSContext* ctx = (JSContext*)m_state;
-        JSRuntime* rt = JS_GetRuntime(ctx);
 
         JS_FreeContext(ctx);
-        JS_FreeRuntime(rt);
     }
 }
 
@@ -167,17 +165,6 @@ JSClassID* EContext::GetClassID(std::string className)
         classIDs.insert({ className, 0 });
 
     return &classIDs.at(className);
-}
-
-EContext* GetContextByState(JSRuntime* rt)
-{
-    for(auto it = ctxs.begin(); it != ctxs.end(); ++it)
-    {
-        EContext* ct = *it;
-        if(JS_GetRuntime((JSContext*)ct->GetState()) == rt)
-            return ct;
-    }
-    return nullptr;
 }
 
 EContext* GetContextByState(JSContext* ctx)
