@@ -187,8 +187,6 @@ public:
             id = *(m_ctx->GetClassID(typeid(T).name()));
 
             m_proto = JS_NewObject((JSContext*)m_ctx->GetState());
-
-            JS_SetPropertyStr((JSContext*)m_ctx->GetState(), m_proto, "_className", Stack<std::string>::pushJS(m_ctx, typeid(T).name()));
         }
     }
 

@@ -71,8 +71,11 @@ protected:
                     JSValue stack = JS_GetPropertyStr((JSContext*)m_ctx, exc, "stack");
                     
                     const char* tmp = JS_ToCString((JSContext*)m_ctx, exc);
-                    std::string str(tmp, strlen(tmp));
+                    const char* stk = JS_ToCString((JSContext*)m_ctx, stack);
+                    std::string str(tmp);
+                    str += "\nStack Trace:\n" + std::string(stk);
                     m_what = str;
+                    JS_FreeCString((JSContext*)m_ctx, stk);
                     JS_FreeCString((JSContext*)m_ctx, tmp);
 
                     JS_FreeValue((JSContext*)m_ctx, stack);

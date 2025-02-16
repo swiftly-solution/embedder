@@ -167,6 +167,15 @@ JSClassID* EContext::GetClassID(std::string className)
     return &classIDs.at(className);
 }
 
+std::string EContext::GetClassName(JSClassID id)
+{
+    for(auto it = classIDs.begin(); it != classIDs.end(); ++it)
+        if(it->second == id)
+            return it->first;
+
+    return "";
+}
+
 EContext* GetContextByState(JSContext* ctx)
 {
     for(auto it = ctxs.begin(); it != ctxs.end(); ++it)

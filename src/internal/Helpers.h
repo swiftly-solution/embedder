@@ -6,6 +6,8 @@
 #include <cassert>
 #include <string>
 
+#include "Context.h"
+
 /************************************
 * All of the Lua Helpers were provided by LuaBridge 2.9. (https://github.com/vinniefalco/LuaBridge/tree/2.9)
 * LuaBridge is licensed under MIT License 
@@ -178,20 +180,7 @@ inline std::string getClassName(JSContext *ctx, JSValue obj) {
         return "";
     }
 
-    JSValue nameVal = JS_GetPropertyStr(ctx, obj, "_className");
-    if (JS_IsException(nameVal)) {
-        return "";
-    }
-
-    const char *className = JS_ToCString(ctx, nameVal);
-    std::string result;
-    if (className) {
-        result = className;
-        JS_FreeCString(ctx, className);
-    }
-    
-    JS_FreeValue(ctx, nameVal);
-    return result;
+    return GetContextByState(ctx)->GetClassName(JS_GetClassID(obj));
 }
 
 #endif

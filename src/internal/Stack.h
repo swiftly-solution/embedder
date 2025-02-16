@@ -1210,7 +1210,7 @@ struct Stack<T*>
             if(shouldDeleteOnGC) MarkDeleteOnGC((void*)instance);
             JS_SetOpaque(ret, instance);
         }
-        return ret;
+        return JS_DupValue(L, ret);
     }
 
     static T* getJS(EContext* ctx, JSValue value) {

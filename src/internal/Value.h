@@ -220,10 +220,20 @@ public:
             return EValue(m_ctx, 0, true);
         } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
             JSContext* ctx = (JSContext*)m_ctx->GetState();
-            JSAtom at = JS_ValueToAtom(ctx, Stack<T>::pushJS(m_ctx, value));
-            JSValue vl = JS_GetProperty(ctx, m_val, at);
-            JS_FreeAtom(ctx, at);
-            return EValue(m_ctx, vl);
+
+            if constexpr (std::is_same<T, std::string>::value) {
+                std::string str = value;
+                JSValue vl = JS_GetPropertyStr(ctx, m_val, str.c_str());
+                return EValue(m_ctx, vl);
+            } else if constexpr (std::is_same<T, const char*>::value) {
+                JSValue vl = JS_GetPropertyStr(ctx, m_val, (const char*)value);
+                return EValue(m_ctx, vl);
+            } else if constexpr (std::is_same<T, int8_t>::value || std::is_same<T, int16_t>::value || std::is_same<T, int32_t>::value || std::is_same<T, int64_t>::value || std::is_same<T, uint8_t>::value || std::is_same<T, uint16_t>::value || std::is_same<T, uint32_t>::value || std::is_same<T, uint64_t>::value) {
+                JSValue vl = JS_GetPropertyInt64(ctx, m_val, (int64_t)value);
+                return EValue(m_ctx, vl);
+            }
+
+            return EValue(m_ctx);
         } else return *this;
     }
 

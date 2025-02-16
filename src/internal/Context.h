@@ -38,6 +38,7 @@ public:
     void PopValue(EValue* val);
 
     JSClassID* GetClassID(std::string className);
+    std::string GetClassName(JSClassID id);
 };
 
 EContext* GetContextByState(JSContext* ctx);
