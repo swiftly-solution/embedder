@@ -396,8 +396,8 @@ public:
         JS_NewClassID(rt, &id);
         JSClassDef class_def = {
             typeid(T).name(),
-            .finalizer = JSGCFunction<T>,
         };
+        class_def.finalizer = JSGCFunction<T>;
 
         return JS_NewClass(rt, id, &class_def) >= 0;
     }
