@@ -6,8 +6,6 @@
 #include <set>
 #include <filesystem>
 
-std::set<EContext*> ctxs;
-
 static const luaL_Reg lualibs[] = {
     {"_G", luaopen_base},
     {LUA_TABLIBNAME, luaopen_table},
@@ -33,6 +31,11 @@ EContext::EContext(ContextKinds kind)
 
         const luaL_Reg* lib = lualibs;
         for (; lib->func; lib++) RegisterLuaLib(lib->name, lib->func);
+
+        lua_pushglobaltable(state); // _G
+        lua_pushlightuserdata(state, (void*)this); // _G, ud
+        lua_rawsetp(state, -2, getContextKey()); // _G[key] = ud. _G
+        lua_pop(state, 1); // empty
     } else if(kind == ContextKinds::JavaScript) {
         if(rt == nullptr) rt = JS_NewRuntime();
         JSContext* ctx = JS_NewContext(rt);
@@ -44,20 +47,18 @@ EContext::EContext(ContextKinds kind)
             JS_NewCFunction(ctx, CHelpers::js_print_to_console, "log", 1));
         JS_SetPropertyStr(ctx, global_obj, "console", console_obj);
 
-        JS_FreeValue(ctx, global_obj);   
+        JS_FreeValue(ctx, global_obj);
+
+        JS_SetContextOpaque(ctx, (void*)this);
 
         m_state = (void*)ctx;
     }
 
     EException::Enable(m_state, m_kind);
-
-    ctxs.insert(this);
 }
 
 EContext::~EContext()
 {
-    ctxs.erase(this);
-
     for(auto it = mappedValues.begin(); it != mappedValues.end(); ++it)
         delete (*it);
 
@@ -178,22 +179,14 @@ std::string EContext::GetClassName(JSClassID id)
 
 EContext* GetContextByState(JSContext* ctx)
 {
-    for(auto it = ctxs.begin(); it != ctxs.end(); ++it)
-    {
-        EContext* ct = *it;
-        if(ct->GetState() == ctx)
-            return ct;
-    }
-    return nullptr;
+    return (EContext*)JS_GetContextOpaque(ctx);
 }
 
 EContext* GetContextByState(lua_State* ctx)
 {
-    for(auto it = ctxs.begin(); it != ctxs.end(); ++it)
-    {
-        EContext* ct = *it;
-        if(ct->GetState() == ctx)
-            return ct;
-    }
-    return nullptr;
+    lua_pushglobaltable(ctx);
+    lua_rawgetp(ctx, -1, getContextKey());
+    auto ud = lua_touserdata(ctx, -1);
+    lua_pop(ctx, 2);
+    return (EContext*)ud;
 }

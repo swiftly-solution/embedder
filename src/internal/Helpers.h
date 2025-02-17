@@ -173,6 +173,20 @@ void const* getConstRegistryKey()
 * Copyright 2012, Vinnie Falco <vinnie.falco@gmail.com>
 *************************************/
 
+/**
+    Get the key for the Context used by that state.
+*/
+
+inline const void* getContextKey()
+{
+#ifdef _NDEBUG
+    static char value;
+    return &value;
+#else
+    return reinterpret_cast<void*>(0xbee);
+#endif
+}
+
 uint32_t JSGetArrayLength(JSContext* ctx, JSValue val);
 
 inline std::string getClassName(JSContext *ctx, JSValue obj) {
