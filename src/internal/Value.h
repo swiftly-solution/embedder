@@ -23,6 +23,8 @@ private:
     }
 
 public:
+    EValue() = default;
+
     EValue(EContext* ctx)
     {
         m_ctx = ctx;
@@ -82,6 +84,15 @@ public:
         m_ctx->PushValue(this);
         m_ref = other.createRef();
         m_val = other.createValue();
+    }
+
+    EValue(const EValue& other) {
+        EValue& nonConstOther = const_cast<EValue&>(other);
+
+        m_ctx = nonConstOther.m_ctx;
+        m_ctx->PushValue(this);
+        m_ref = nonConstOther.createRef();
+        m_val = nonConstOther.createValue();
     }
 
     int createRef() {
