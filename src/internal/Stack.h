@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <utility>
 #include <typeinfo>
+#include <any>
 
 #include "Context.h"
 #include "Helpers.h"
@@ -236,6 +237,42 @@ struct Stack<unsigned short>
         unsigned int val;
         JS_ToUint32((JSContext*)(ctx->GetState()), &val, value);
         return (unsigned short)val;
+    }
+
+    static bool isLuaInstance(EContext* ctx, int ref)
+    {
+        return Stack<int>::isLuaInstance(ctx, ref);
+    }
+
+    static bool isJSInstance(EContext* ctx, JSValue value)
+    {
+        return Stack<int>::isJSInstance(ctx, value);
+    }
+};
+
+template<>
+struct Stack<int8_t>
+{
+    static void pushLua(EContext* ctx, int8_t value)
+    {
+        lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
+    }
+
+    static JSValue pushJS(EContext* ctx, int8_t value)
+    {
+        return JS_NewUint32((JSContext*)(ctx->GetState()), value);
+    }
+
+    static int8_t getLua(EContext* ctx, int ref)
+    {
+        return (int8_t)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
+    }
+
+    static int8_t getJS(EContext* ctx, JSValue value)
+    {
+        unsigned int val;
+        JS_ToUint32((JSContext*)(ctx->GetState()), &val, value);
+        return (int8_t)val;
     }
 
     static bool isLuaInstance(EContext* ctx, int ref)
