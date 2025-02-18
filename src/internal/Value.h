@@ -248,6 +248,25 @@ public:
         } else return *this;
     }
 
+    template<class T>
+    EValue setProperty(std::string key, T value)
+    {
+        if(!isTable()) return *this;
+
+        if(m_ctx->GetKind() == ContextKinds::Lua) {
+            lua_State* L = (lua_State*)m_ctx->GetState();
+            lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
+            Stack<T>::pushLua(m_ctx, value);
+            rawsetfield(L, -2, key.c_str());
+            lua_pop(L, 1);
+        } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
+            JSContext* ctx = (JSContext*)m_ctx->GetState();
+            JS_SetPropertyStr(ctx, m_val, key.c_str(), Stack<T>::pushJS(m_ctx, value));
+        }
+        
+        return *this;
+    }
+
     std::string tostring()
     {
         if(m_ctx->GetKind() == ContextKinds::Lua) {
