@@ -37,8 +37,12 @@ EContext::EContext(ContextKinds kind)
         lua_rawsetp(state, -2, getContextKey()); // _G[key] = ud. _G
         lua_pop(state, 1); // empty
     } else if(kind == ContextKinds::JavaScript) {
-        if(rt == nullptr) rt = JS_NewRuntime();
+        if(rt == nullptr) {
+            rt = JS_NewRuntime();
+            JS_SetMaxStackSize(rt, 0);
+        }
         JSContext* ctx = JS_NewContext(rt);
+
 
         JSValue global_obj = JS_GetGlobalObject(ctx);
         JSValue console_obj = JS_NewObject(ctx);

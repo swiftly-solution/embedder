@@ -1214,12 +1214,13 @@ struct Stack<T*>
 {
     static void pushLua(EContext* ctx, T* instance, bool shouldDeleteOnGC = false) {
         lua_State* L = (lua_State*)ctx->GetState();
-
+        if(instance == nullptr) return lua_pushnil(L);
+        
         if(shouldDeleteOnGC) MarkDeleteOnGC((void*)instance);
         
         T** userdata = (T**)lua_newuserdata(L, sizeof(T*));
         *userdata = instance;
-        
+
         luaL_getmetatable(L, typeid(T).name());
         lua_setmetatable(L, -2);
     }
@@ -1237,6 +1238,8 @@ struct Stack<T*>
     }
 
     static JSValue pushJS(EContext* ctx, T* instance, bool shouldDeleteOnGC = false) {
+        if(instance == nullptr) return JS_NULL;
+        
         JSContext* L = (JSContext*)ctx->GetState();
 
         JSClassID& id = *(ctx->GetClassID(typeid(T).name()));
