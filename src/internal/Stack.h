@@ -143,28 +143,28 @@ struct Stack<unsigned int>
 };
 
 template<>
-struct Stack<unsigned char>
+struct Stack<uint8_t>
 {
-    static void pushLua(EContext* ctx, unsigned char value)
+    static void pushLua(EContext* ctx, uint8_t value)
     {
         lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
     }
 
-    static JSValue pushJS(EContext* ctx, unsigned char value)
+    static JSValue pushJS(EContext* ctx, uint8_t value)
     {
         return JS_NewUint32((JSContext*)(ctx->GetState()), value);
     }
 
-    static unsigned char getLua(EContext* ctx, int ref)
+    static uint8_t getLua(EContext* ctx, int ref)
     {
-        return (unsigned char)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
+        return (uint8_t)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
-    static unsigned char getJS(EContext* ctx, JSValue value)
+    static uint8_t getJS(EContext* ctx, JSValue value)
     {
         unsigned int val;
         JS_ToUint32((JSContext*)(ctx->GetState()), &val, value);
-        return (unsigned char)val;
+        return (uint8_t)val;
     }
 
     static bool isLuaInstance(EContext* ctx, int ref)
@@ -179,28 +179,28 @@ struct Stack<unsigned char>
 };
 
 template<>
-struct Stack<short>
+struct Stack<int16_t>
 {
-    static void pushLua(EContext* ctx, short value)
+    static void pushLua(EContext* ctx, int16_t value)
     {
         lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
     }
 
-    static JSValue pushJS(EContext* ctx, short value)
+    static JSValue pushJS(EContext* ctx, int16_t value)
     {
         return JS_NewInt32((JSContext*)(ctx->GetState()), value);
     }
 
-    static short getLua(EContext* ctx, int ref)
+    static int16_t getLua(EContext* ctx, int ref)
     {
-        return (short)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
+        return (int16_t)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
-    static short getJS(EContext* ctx, JSValue value)
+    static int16_t getJS(EContext* ctx, JSValue value)
     {
         int val;
         JS_ToInt32((JSContext*)(ctx->GetState()), &val, value);
-        return (short)val;
+        return (int16_t)val;
     }
 
     static bool isLuaInstance(EContext* ctx, int ref)
@@ -215,28 +215,28 @@ struct Stack<short>
 };
 
 template<>
-struct Stack<unsigned short>
+struct Stack<uint16_t>
 {
-    static void pushLua(EContext* ctx, unsigned short value)
+    static void pushLua(EContext* ctx, uint16_t value)
     {
         lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
     }
 
-    static JSValue pushJS(EContext* ctx, unsigned short value)
+    static JSValue pushJS(EContext* ctx, uint16_t value)
     {
         return JS_NewUint32((JSContext*)(ctx->GetState()), value);
     }
 
-    static unsigned short getLua(EContext* ctx, int ref)
+    static uint16_t getLua(EContext* ctx, int ref)
     {
-        return (unsigned short)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
+        return (uint16_t)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
-    static unsigned short getJS(EContext* ctx, JSValue value)
+    static uint16_t getJS(EContext* ctx, JSValue value)
     {
         unsigned int val;
         JS_ToUint32((JSContext*)(ctx->GetState()), &val, value);
-        return (unsigned short)val;
+        return (uint16_t)val;
     }
 
     static bool isLuaInstance(EContext* ctx, int ref)
@@ -287,100 +287,28 @@ struct Stack<int8_t>
 };
 
 template<>
-struct Stack<long>
+struct Stack<int64_t>
 {
-    static void pushLua(EContext* ctx, long value)
+    static void pushLua(EContext* ctx, int64_t value)
     {
         lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
     }
 
-    static JSValue pushJS(EContext* ctx, long value)
-    {
-        return JS_NewInt32((JSContext*)(ctx->GetState()), value);
-    }
-
-    static long getLua(EContext* ctx, int ref)
-    {
-        return (long)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
-    }
-
-    static long getJS(EContext* ctx, JSValue value)
-    {
-        int val;
-        JS_ToInt32((JSContext*)(ctx->GetState()), &val, value);
-        return (long)val;
-    }
-
-    static bool isLuaInstance(EContext* ctx, int ref)
-    {
-        return Stack<int>::isLuaInstance(ctx, ref);
-    }
-
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        return Stack<int>::isJSInstance(ctx, value);
-    }
-};
-
-template<>
-struct Stack<unsigned long>
-{
-    static void pushLua(EContext* ctx, unsigned long value)
-    {
-        lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
-    }
-
-    static JSValue pushJS(EContext* ctx, unsigned long value)
-    {
-        return JS_NewUint32((JSContext*)(ctx->GetState()), value);
-    }
-
-    static unsigned long getLua(EContext* ctx, int ref)
-    {
-        return (unsigned long)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
-    }
-
-    static unsigned long getJS(EContext* ctx, JSValue value)
-    {
-        unsigned int val;
-        JS_ToUint32((JSContext*)(ctx->GetState()), &val, value);
-        return (unsigned long)val;
-    }
-
-    static bool isLuaInstance(EContext* ctx, int ref)
-    {
-        return Stack<int>::isLuaInstance(ctx, ref);
-    }
-
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        return Stack<int>::isJSInstance(ctx, value);
-    }
-};
-
-template<>
-struct Stack<long long>
-{
-    static void pushLua(EContext* ctx, long long value)
-    {
-        lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
-    }
-
-    static JSValue pushJS(EContext* ctx, long long value)
+    static JSValue pushJS(EContext* ctx, int64_t value)
     {
         return JS_NewInt64((JSContext*)(ctx->GetState()), value);
     }
 
-    static long long getLua(EContext* ctx, int ref)
+    static int64_t getLua(EContext* ctx, int ref)
     {
-        return (long long)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
+        return (int64_t)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
-    static long long getJS(EContext* ctx, JSValue value)
+    static int64_t getJS(EContext* ctx, JSValue value)
     {
         int64_t val;
         JS_ToInt64((JSContext*)(ctx->GetState()), &val, value);
-        return (long long)val;
+        return (int64_t)val;
     }
 
     static bool isLuaInstance(EContext* ctx, int ref)
@@ -395,28 +323,29 @@ struct Stack<long long>
 };
 
 template<>
-struct Stack<unsigned long long>
+struct Stack<uint64_t>
 {
-    static void pushLua(EContext* ctx, unsigned long long value)
+    static void pushLua(EContext* ctx, uint64_t value)
     {
         lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
     }
 
-    static JSValue pushJS(EContext* ctx, unsigned long long value)
+    static JSValue pushJS(EContext* ctx, uint64_t value)
     {
+        printf("Called it: %llu\n", value);
         return JS_NewBigUint64((JSContext*)(ctx->GetState()), value);
     }
 
-    static unsigned long long getLua(EContext* ctx, int ref)
+    static uint64_t getLua(EContext* ctx, int ref)
     {
-        return (unsigned long long)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
+        return (uint64_t)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
-    static unsigned long long getJS(EContext* ctx, JSValue value)
+    static uint64_t getJS(EContext* ctx, JSValue value)
     {
         uint64_t val;
         JS_ToBigUint64((JSContext*)(ctx->GetState()), &val, value);
-        return (unsigned long long)val;
+        return (uint64_t)val;
     }
 
     static bool isLuaInstance(EContext* ctx, int ref)
