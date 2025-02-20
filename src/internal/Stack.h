@@ -332,7 +332,6 @@ struct Stack<uint64_t>
 
     static JSValue pushJS(EContext* ctx, uint64_t value)
     {
-        printf("Called it: %llu\n", value);
         return JS_NewBigUint64((JSContext*)(ctx->GetState()), value);
     }
 
