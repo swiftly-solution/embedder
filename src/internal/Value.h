@@ -29,7 +29,7 @@ public:
     {
         m_ctx = ctx;
         m_ctx->PushValue(this);
-        if(ctx->GetKind() == ContextKinds::Lua) m_ref = LUA_NOREF;
+        if(ctx->GetKind() == ContextKinds::Lua) m_ref = LUA_REFNIL;
         else if(ctx->GetKind() == ContextKinds::JavaScript) m_val = JS_NULL;
     }
     
