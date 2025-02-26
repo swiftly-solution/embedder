@@ -324,9 +324,9 @@ public:
             JSContext* state = (JSContext*)m_ctx->GetState();
 
             constexpr size_t argCount = sizeof...(Params);
-            JSValue args[argCount] = { Stack<std::decay_t<Params>>::pushJS(m_ctx, std::forward<Params>(params))... };
+            std::vector<JSValue> args = { Stack<std::decay_t<Params>>::pushJS(m_ctx, std::forward<Params>(params))... };
             
-            JSValue result = JS_Call(state, m_val, JS_UNDEFINED, argCount, args);
+            JSValue result = JS_Call(state, m_val, JS_UNDEFINED, argCount, args.data());
             
             for(size_t i = 0; i < argCount; i++) {
                 JS_FreeValue(state, args[i]);
