@@ -407,7 +407,7 @@ struct Stack<double>
         return JS_NewFloat64((JSContext*)(ctx->GetState()), value);
     }
 
-    static float getLua(EContext* ctx, int ref)
+    static double getLua(EContext* ctx, int ref)
     {
         return (double)luaL_checknumber((lua_State*)(ctx->GetState()), ref);
     }
