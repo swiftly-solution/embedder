@@ -172,7 +172,7 @@ JSClassID* EContext::GetClassID(std::string className)
     return &classIDs.at(className);
 }
 
-std::string EContext::GetClassName(JSClassID id)
+std::string EContext::GetClsName(JSClassID id)
 {
     for(auto it = classIDs.begin(); it != classIDs.end(); ++it)
         if(it->second == id)

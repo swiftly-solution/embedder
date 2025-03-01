@@ -194,7 +194,7 @@ inline std::string getClassName(JSContext *ctx, JSValue obj) {
         return "";
     }
 
-    return GetContextByState(ctx)->GetClassName(JS_GetClassID(obj));
+    return GetContextByState(ctx)->GetClsName(JS_GetClassID(obj));
 }
 
 #endif
