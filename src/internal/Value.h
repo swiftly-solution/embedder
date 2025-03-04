@@ -14,6 +14,7 @@ private:
     EContext* m_ctx;
     int m_ref = LUA_NOREF;
     JSValue m_val = JS_NULL;
+    bool nofree = false;
 
     void swap(EValue& other)
     {
@@ -69,6 +70,8 @@ public:
 
     ~EValue()
     {
+        if(nofree) return;
+        
         m_ctx->PopValue(this);
         if(m_ctx->GetKind() == ContextKinds::Lua) {
             if(m_ref == LUA_NOREF) return;
@@ -356,6 +359,11 @@ public:
             JS_FreeValue(ct, db);
             return val;
         } else return EValue(ctx);
+    }
+
+    void MarkNoFree()
+    {
+        nofree = true;
     }
 
     template<class T>
