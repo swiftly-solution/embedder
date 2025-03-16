@@ -34,6 +34,30 @@ public:
             return luaL_error(L, e.what());
         }
     }
+
+    template<class ReturnType, class T, class... Params, std::size_t... I>
+    static ReturnType callFunctionClassImpl(EContext* ctx, ReturnType(T::*func)(Params...), std::index_sequence<I...>) {
+        T* ptr = Stack<T*>::getLua(ctx, 1);
+        return (ptr->*func)(Stack<Params>::getLua(ctx, int(I + 2))...);
+    }
+
+    template<class ReturnType, class T, class... Params>
+    static int runClass(lua_State* L, ReturnType(T::*func)(Params...)) {
+        try {
+            EContext* ctx = GetContextByState(L);
+
+            if constexpr (std::is_same<ReturnType, void>::value) {
+                callFunctionClassImpl<ReturnType, T, Params...>(ctx, func, std::index_sequence_for<Params...>{});
+                return 0;
+            } else {
+                ReturnType val = callFunctionClassImpl<ReturnType, T, Params...>(ctx, func, std::index_sequence_for<Params...>{});
+                Stack<ReturnType>::pushLua(ctx, val);
+                return 1;
+            }
+        } catch(const std::exception& e) {
+            return luaL_error(L, e.what());
+        }
+    }
 };
 
 class JSInvoker

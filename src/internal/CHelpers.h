@@ -22,7 +22,7 @@ public:
     template<class T>
     static JSValue propGetter(JSContext *ctx, JSValue this_val, int argc, JSValue *argv, int magic, JSValue *func_data)
     {
-        return Stack<T>::pushJS(GetContextByState(ctx), *(T*)strtol((const char*)func_data, nullptr, 16));
+        return Stack<T>::pushJS(GetContextByState(ctx), *(T*)StringToPtr((const char*)func_data));
     }
 
     template<class T>
@@ -32,7 +32,7 @@ public:
 
         if(!Stack<T>::isJSInstance(ct, argv[0])) return JS_ThrowTypeError(ctx, "Property Setter: Invalid data type.");
 
-        T& val = *(T*)strtol((const char*)func_data, nullptr, 16);
+        T& val = *(T*)StringToPtr((const char*)func_data);
         val = Stack<T>::getJS(ct, argv[0]);
 
         return JS_UNDEFINED;
@@ -43,7 +43,7 @@ public:
     {
         auto ectx = GetContextByState(ctx);
         C* val = Stack<C*>::getJS(ectx, this_val);
-        T C::** mp = static_cast<T C::**>((void*)strtol((const char*)func_data, nullptr, 16));
+        T C::** mp = static_cast<T C::**>(StringToPtr((const char*)func_data));
 
         try {
             return Stack<T>::pushJS(ectx, val->**mp);
@@ -59,7 +59,7 @@ public:
         if(!Stack<T>::isJSInstance(ectx, argv[0])) return JS_ThrowTypeError(ctx, "Property Setter: Invalid data type.");
 
         C* val = Stack<C*>::getJS(ectx, this_val);
-        T C::** mp = static_cast<T C::**>((void*)strtol((const char*)func_data, nullptr, 16));
+        T C::** mp = static_cast<T C::**>(StringToPtr((const char*)func_data));
 
         try {
             val->**mp = Stack<T>::getJS(ectx, argv[0]);
@@ -74,7 +74,7 @@ public:
     static JSValue JSCallFunction(JSContext *ctx, JSValue this_val, int argc, JSValue *argv, int magic, JSValue *func_data)
     {
         using FnType = ReturnType(*)(Params...);
-        FnType func = reinterpret_cast<FnType>(strtol((const char*)func_data, nullptr, 16));
+        FnType func = reinterpret_cast<FnType>(StringToPtr((const char*)func_data));
         if(!func) return JS_UNDEFINED;
 
         return JSInvoker::run<ReturnType, Params...>(ctx, func, argv);
@@ -84,7 +84,7 @@ public:
     static JSValue JSCallClassFunction(JSContext *ctx, JSValue this_val, int argc, JSValue *argv, int magic, JSValue *func_data)
     {
         using FnType = ReturnType(*)(T*, Params...);
-        FnType func = reinterpret_cast<FnType>(strtol((const char*)func_data, nullptr, 16));
+        FnType func = reinterpret_cast<FnType>(StringToPtr((const char*)func_data));
         if(!func) return JS_UNDEFINED;
 
         return JSInvoker::runClass<ReturnType, T, Params...>(ctx, this_val, func, argv);
@@ -349,6 +349,20 @@ public:
         return LuaInvoker::run<ReturnType, Params...>(L, func);
     }
 
+    template<class ReturnType, class T, class...Params>
+    static int LuaCallClassFunction(lua_State* L)
+    {
+        union {
+            void* ptr;
+            ReturnType(T::*func)(Params...);
+        } conv;
+        
+        conv.ptr = lua_touserdata(L, lua_upvalueindex(1));
+
+        if(!conv.ptr) return 0;
+        return LuaInvoker::runClass<ReturnType, T, Params...>(L, conv.func);
+    }
+
     template<class T>
     static int LuaGCFunction(lua_State* L)
     {
@@ -419,6 +433,19 @@ public:
 
         if(!JS_IsException(ret)) JS_SetOpaque(ret, ptr);
         return ret;
+    }
+
+    template<class T>
+    static std::string PtrToString(T v) {
+        return string_format("%p", v);
+    }
+
+    static void* StringToPtr(std::string v) {
+        #ifdef _WIN32
+            return reinterpret_cast<void*>(strtoll(v.c_str(), nullptr, 16));
+        #else
+            return reinterpret_cast<void*>(strtol(v.c_str(), nullptr, 16));
+        #endif
     }
 };
 

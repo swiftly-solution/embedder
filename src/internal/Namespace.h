@@ -77,8 +77,8 @@ public:
             // Due to the value being duplicated inside NewCFunctionData, we need to cast the data into a string, so that the string with the pointer is duplicated but not the value
             JS_DefinePropertyGetSet(
                 (JSContext*)m_ctx->GetState(), m_ns, atom,
-                JS_NewCFunctionData((JSContext*)m_ctx->GetState(), CHelpers::propGetter<T>, 0, 1, 1, (JSValue*)(CHelpers::string_format("%p", value).c_str())),
-                isWritable ? JS_NewCFunctionData((JSContext*)m_ctx->GetState(), CHelpers::propSetter<T>, 1, 1, 1, (JSValue*)(CHelpers::string_format("%p", value).c_str())) : JS_UNDEFINED,
+                JS_NewCFunctionData((JSContext*)m_ctx->GetState(), CHelpers::propGetter<T>, 0, 1, 1, (JSValue*)(CHelpers::PtrToString(func).c_str())),
+                isWritable ? JS_NewCFunctionData((JSContext*)m_ctx->GetState(), CHelpers::propSetter<T>, 1, 1, 1, (JSValue*)(CHelpers::PtrToString(func).c_str())) : JS_UNDEFINED,
                 0
             );
 
@@ -104,7 +104,7 @@ public:
 
             JS_SetPropertyStr(
                 ctx, m_ns, name.c_str(), 
-                JS_NewCFunctionData(ctx, CHelpers::JSCallFunction<ReturnType, Params...>, 0, 1, 1, (JSValue*)(CHelpers::string_format("%p", reinterpret_cast<void*>(func)).c_str()))
+                JS_NewCFunctionData(ctx, CHelpers::JSCallFunction<ReturnType, Params...>, 0, 1, 1, (JSValue*)(CHelpers::PtrToString(func).c_str()))
             );
         }
 
@@ -216,7 +216,7 @@ public:
             lua_State* L = static_cast<lua_State*>(m_ctx->GetState());
 
             lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
-            lua_pushlightuserdata(L, reinterpret_cast<void*>(strtol(CHelpers::string_format("%p", func).c_str(), nullptr, 16)));
+            lua_pushlightuserdata(L, CHelpers::StringToPtr(CHelpers::PtrToString(func)));
             lua_pushcclosure(L, CHelpers::LuaCallFunction<ReturnType, T*, Params...>, 1);
             rawsetfield(L, -2, name.c_str());
             lua_pop(L, 1);
@@ -224,7 +224,7 @@ public:
             JSContext* ctx = (JSContext*)m_ctx->GetState();
             JS_SetPropertyStr(
                 ctx, m_proto, name.c_str(), 
-                JS_NewCFunctionData(ctx, CHelpers::JSCallClassFunction<ReturnType, T, Params...>, 0, 1, 1, (JSValue*)(CHelpers::string_format("%p", func).c_str()))
+                JS_NewCFunctionData(ctx, CHelpers::JSCallClassFunction<ReturnType, T, Params...>, 0, 1, 1, (JSValue*)(CHelpers::PtrToString(func).c_str()))
             );
         }
 
@@ -237,15 +237,15 @@ public:
             lua_State* L = static_cast<lua_State*>(m_ctx->GetState());
 
             lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
-            lua_pushlightuserdata(L, reinterpret_cast<void*>(strtol(CHelpers::string_format("%p", func).c_str(), nullptr, 16)));
-            lua_pushcclosure(L, CHelpers::LuaCallFunction<ReturnType, T*, Params...>, 1);
+            lua_pushlightuserdata(L, CHelpers::StringToPtr(CHelpers::PtrToString(func)));
+            lua_pushcclosure(L, CHelpers::LuaCallClassFunction<ReturnType, T, Params...>, 1);
             rawsetfield(L, -2, name.c_str());
             lua_pop(L, 1);
         } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
             JSContext* ctx = (JSContext*)m_ctx->GetState();
             JS_SetPropertyStr(
                 ctx, m_proto, name.c_str(), 
-                JS_NewCFunctionData(ctx, CHelpers::JSCallClassFunction<ReturnType, T, Params...>, 0, 1, 1, (JSValue*)(CHelpers::string_format("%p", func).c_str()))
+                JS_NewCFunctionData(ctx, CHelpers::JSCallClassFunction<ReturnType, T, Params...>, 0, 1, 1, (JSValue*)(CHelpers::PtrToString(func).c_str()))
             );
         }
 
@@ -258,15 +258,15 @@ public:
             lua_State* L = static_cast<lua_State*>(m_ctx->GetState());
 
             lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
-            lua_pushlightuserdata(L, reinterpret_cast<void*>(strtol(CHelpers::string_format("%p", func).c_str(), nullptr, 16)));
-            lua_pushcclosure(L, CHelpers::LuaCallFunction<ReturnType, T*, Params...>, 1);
+            lua_pushlightuserdata(L, CHelpers::StringToPtr(CHelpers::PtrToString(func)));
+            lua_pushcclosure(L, CHelpers::LuaCallClassFunction<ReturnType, T, Params...>, 1);
             rawsetfield(L, -2, name.c_str());
             lua_pop(L, 1);
         } else if(m_ctx->GetKind() == ContextKinds::JavaScript) {
             JSContext* ctx = (JSContext*)m_ctx->GetState();
             JS_SetPropertyStr(
                 ctx, m_proto, name.c_str(), 
-                JS_NewCFunctionData(ctx, CHelpers::JSCallClassFunction<ReturnType, T, Params...>, 0, 1, 1, (JSValue*)(CHelpers::string_format("%p", func).c_str()))
+                JS_NewCFunctionData(ctx, CHelpers::JSCallClassFunction<ReturnType, T, Params...>, 0, 1, 1, (JSValue*)(CHelpers::PtrToString(func).c_str()))
             );
         }
 
@@ -281,8 +281,8 @@ public:
         lua_State* L = static_cast<lua_State*>(m_ctx->GetState());
 
         lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
-        lua_pushlightuserdata(L, reinterpret_cast<void*>(strtol(CHelpers::string_format("%p", func).c_str(), nullptr, 16)));
-        lua_pushcclosure(L, CHelpers::LuaCallFunction<ReturnType, T*, Params...>, 1);
+        lua_pushlightuserdata(L, CHelpers::StringToPtr(CHelpers::PtrToString(func)));
+        lua_pushcclosure(L, CHelpers::LuaCallClassFunction<ReturnType, T, Params...>, 1);
         rawsetfield(L, -2, name.c_str());
         lua_pop(L, 1);
 
@@ -297,7 +297,7 @@ public:
         lua_State* L = static_cast<lua_State*>(m_ctx->GetState());
 
         lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
-        lua_pushlightuserdata(L, reinterpret_cast<void*>(strtol(CHelpers::string_format("%p", func).c_str(), nullptr, 16)));
+        lua_pushlightuserdata(L, CHelpers::StringToPtr(CHelpers::PtrToString(func)));
         lua_pushcclosure(L, CHelpers::LuaCallFunction<ReturnType, T*, Params...>, 1);
         rawsetfield(L, -2, name.c_str());
         lua_pop(L, 1);
@@ -327,7 +327,7 @@ public:
         JSContext* ctx = (JSContext*)m_ctx->GetState();
         JS_SetPropertyStr(
             ctx, m_proto, name.c_str(), 
-            JS_NewCFunctionData(ctx, CHelpers::JSCallClassFunction<ReturnType, T, Params...>, 0, 1, 1, (JSValue*)(CHelpers::string_format("%p", func).c_str()))
+            JS_NewCFunctionData(ctx, CHelpers::JSCallClassFunction<ReturnType, T, Params...>, 0, 1, 1, (JSValue*)(CHelpers::PtrToString(func).c_str()))
         );
 
         return *this;
@@ -341,7 +341,7 @@ public:
         JSContext* ctx = (JSContext*)m_ctx->GetState();
         JS_SetPropertyStr(
             ctx, m_proto, name.c_str(), 
-            JS_NewCFunctionData(ctx, CHelpers::JSCallClassFunction<ReturnType, T, Params...>, 0, 1, 1, (JSValue*)(CHelpers::string_format("%p", func).c_str()))
+            JS_NewCFunctionData(ctx, CHelpers::JSCallClassFunction<ReturnType, T, Params...>, 0, 1, 1, (JSValue*)(CHelpers::PtrToString(func).c_str()))
         );
 
         return *this;
@@ -385,8 +385,8 @@ public:
 
             JS_DefinePropertyGetSet(
                 ctx, m_proto, atom,
-                JS_NewCFunctionData(ctx, CHelpers::propClassGetter<T, PropType>, 0, 1, 1, (JSValue*)(CHelpers::string_format("%p", memb).c_str())),
-                writable ? JS_NewCFunctionData(ctx, CHelpers::propClassSetter<T, PropType>, 1, 1, 1, (JSValue*)(CHelpers::string_format("%p", memb).c_str())) : JS_UNDEFINED,
+                JS_NewCFunctionData(ctx, CHelpers::propClassGetter<T, PropType>, 0, 1, 1, (JSValue*)(CHelpers::PtrToString(member).c_str())),
+                writable ? JS_NewCFunctionData(ctx, CHelpers::propClassSetter<T, PropType>, 1, 1, 1, (JSValue*)(CHelpers::PtrToString(member).c_str())) : JS_UNDEFINED,
                 0
             );
 
