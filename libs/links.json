@@ -1,12 +1,18 @@
 {
     "libraries": {
-        "windows": [
-            "lua/lua.lib",
-            "js/qjs.lib"
+        "windows": [],
+        "linux": []
+    },
+    "source_code": {
+        "files": [
+            "js/quickjs.c",
+            "js/libunicode.c",
+            "js/libregexp.c",
+            "js/libbf.c",
+            "js/cutils.c"
         ],
-        "linux": [
-            "lua/liblua.a",
-            "js/libqjs.a"
+        "directories": [
+            "lua"
         ]
     },
     "includes": [

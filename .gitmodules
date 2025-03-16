@@ -1,0 +1,6 @@
+[submodule "libs/js"]
+	path = libs/js
+	url = https://github.com/swiftly-solution/quickjs
+[submodule "libs/lua"]
+	path = libs/lua
+	url = https://github.com/swiftly-solution/lua
