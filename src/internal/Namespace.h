@@ -77,8 +77,8 @@ public:
             // Due to the value being duplicated inside NewCFunctionData, we need to cast the data into a string, so that the string with the pointer is duplicated but not the value
             JS_DefinePropertyGetSet(
                 (JSContext*)m_ctx->GetState(), m_ns, atom,
-                JS_NewCFunctionData((JSContext*)m_ctx->GetState(), CHelpers::propGetter<T>, 0, 1, 1, (JSValue*)(CHelpers::PtrToString(func).c_str())),
-                isWritable ? JS_NewCFunctionData((JSContext*)m_ctx->GetState(), CHelpers::propSetter<T>, 1, 1, 1, (JSValue*)(CHelpers::PtrToString(func).c_str())) : JS_UNDEFINED,
+                JS_NewCFunctionData((JSContext*)m_ctx->GetState(), CHelpers::propGetter<T>, 0, 1, 1, (JSValue*)(CHelpers::PtrToString(value).c_str())),
+                isWritable ? JS_NewCFunctionData((JSContext*)m_ctx->GetState(), CHelpers::propSetter<T>, 1, 1, 1, (JSValue*)(CHelpers::PtrToString(value).c_str())) : JS_UNDEFINED,
                 0
             );
 
