@@ -385,8 +385,8 @@ public:
 
             JS_DefinePropertyGetSet(
                 ctx, m_proto, atom,
-                JS_NewCFunctionData(ctx, CHelpers::propClassGetter<T, PropType>, 0, 1, 1, (JSValue*)(CHelpers::PtrToString(member).c_str())),
-                writable ? JS_NewCFunctionData(ctx, CHelpers::propClassSetter<T, PropType>, 1, 1, 1, (JSValue*)(CHelpers::PtrToString(member).c_str())) : JS_UNDEFINED,
+                JS_NewCFunctionData(ctx, CHelpers::propClassGetter<T, PropType>, 0, 1, 1, (JSValue*)(CHelpers::PtrToString(memb).c_str())),
+                writable ? JS_NewCFunctionData(ctx, CHelpers::propClassSetter<T, PropType>, 1, 1, 1, (JSValue*)(CHelpers::PtrToString(memb).c_str())) : JS_UNDEFINED,
                 0
             );
 
