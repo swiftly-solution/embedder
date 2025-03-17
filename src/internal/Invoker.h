@@ -86,12 +86,13 @@ public:
     }
 
     template<class ReturnType, class T, class... Params, std::size_t... I>
-    static ReturnType callFunctionImplClass(EContext* ctx, void* ptr, JSValue* args, ReturnType (*func)(T*, Params...), std::index_sequence<I...>) {
-        return func((T*)ptr, Stack<Params>::getJS(ctx, args[I])...);
+    static ReturnType callFunctionImplClass(EContext* ctx, void* ptr, JSValue* args, ReturnType (T::*func)(Params...), std::index_sequence<I...>) {
+        T* vPtr = (T*)ptr;
+        return (vPtr->*func)(Stack<Params>::getJS(ctx, args[I])...);
     }
 
     template<class ReturnType, class T, class... Params>
-    static JSValue runClass(JSContext* ctx, JSValue this_obj, ReturnType (*func)(T*, Params...), JSValue* args) {
+    static JSValue runClass(JSContext* ctx, JSValue this_obj, ReturnType (T::*func)(Params...), JSValue* args) {
         try {
             EContext* ictx = GetContextByState(ctx);
 

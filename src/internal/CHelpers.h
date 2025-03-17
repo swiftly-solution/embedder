@@ -83,11 +83,15 @@ public:
     template<class ReturnType, class T, class... Params>
     static JSValue JSCallClassFunction(JSContext *ctx, JSValue this_val, int argc, JSValue *argv, int magic, JSValue *func_data)
     {
-        using FnType = ReturnType(*)(T*, Params...);
-        FnType func = reinterpret_cast<FnType>(StringToPtr((const char*)func_data));
-        if(!func) return JS_UNDEFINED;
+        union {
+            void* ptr;
+            ReturnType(T::*func)(Params...);
+        } conv;
+        
+        conv.ptr = StringToPtr((const char*)func_data);
 
-        return JSInvoker::runClass<ReturnType, T, Params...>(ctx, this_val, func, argv);
+        if(!conv.ptr) return JS_UNDEFINED;
+        return JSInvoker::runClass<ReturnType, T, Params...>(ctx, this_val, conv.func, argv);
     }
 
     static JSValue js_print_to_console(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
