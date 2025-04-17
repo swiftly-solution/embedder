@@ -1,7 +1,8 @@
-#ifndef _embedder_h
-#define _embedder_h
+#ifndef _src_embedder
+#define _src_embedder
 
-#include "Config.h"
-#include "internal/Namespace.h"
+#include "Context.h"
+#include "Value.h"
+#include "Engine.h"
 
 #endif

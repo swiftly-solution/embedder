@@ -7,7 +7,7 @@
 #include <lua.hpp>
 #include <quickjs.h>
 
-#include "../ContextKinds.h"
+#include "ContextKinds.h"
 #include "Context.h"
 
 class EException: public std::exception

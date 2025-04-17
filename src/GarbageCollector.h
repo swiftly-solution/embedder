@@ -3,5 +3,6 @@
 
 void MarkDeleteOnGC(void* ptr);
 bool CheckAndPopDeleteOnGC(void* ptr);
+bool ShouldDeleteOnGC(void* ptr);
 
 #endif

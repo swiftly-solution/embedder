@@ -16,3 +16,8 @@ bool CheckAndPopDeleteOnGC(void* ptr)
     deleteOnGC.erase(ptr);
     return true;
 }
+
+bool ShouldDeleteOnGC(void* ptr)
+{
+    return deleteOnGC.find(ptr) != deleteOnGC.end();
+}
