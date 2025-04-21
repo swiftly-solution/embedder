@@ -11,6 +11,7 @@
 #include <typeinfo>
 #include <any>
 #include <cstdint>
+#include <stdint.h>
 
 #include "Context.h"
 #include "Helpers.h"
@@ -110,6 +111,47 @@ struct Stack<int>
 };
 
 template <>
+struct Stack<long int>
+{
+    static void pushLua(EContext* ctx, long int value)
+    {
+        lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
+    }
+
+    static JSValue pushJS(EContext* ctx, long int value)
+    {
+        return JS_NewInt32((JSContext*)(ctx->GetState()), value);
+    }
+
+    static long int getLua(EContext* ctx, int ref)
+    {
+        return (long int)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
+    }
+
+    static long int getJS(EContext* ctx, JSValue value)
+    {
+        int val;
+        JS_ToInt32((JSContext*)(ctx->GetState()), &val, value);
+        return (long int)val;
+    }
+
+    static bool isLuaInstance(EContext* ctx, int ref)
+    {
+        if (lua_type((lua_State*)(ctx->GetState()), ref) != LUA_TNUMBER)
+            return false;
+
+        int isNumber;
+        lua_tointegerx((lua_State*)(ctx->GetState()), ref, &isNumber);
+        return isNumber;
+    }
+
+    static bool isJSInstance(EContext* ctx, JSValue value)
+    {
+        return JS_IsNumber(value);
+    }
+};
+
+template <>
 struct Stack<unsigned int>
 {
     static void pushLua(EContext* ctx, unsigned int value)
@@ -132,6 +174,42 @@ struct Stack<unsigned int>
         unsigned int val;
         JS_ToUint32((JSContext*)(ctx->GetState()), &val, value);
         return val;
+    }
+
+    static bool isLuaInstance(EContext* ctx, int ref)
+    {
+        return Stack<int>::isLuaInstance(ctx, ref);
+    }
+
+    static bool isJSInstance(EContext* ctx, JSValue value)
+    {
+        return Stack<int>::isJSInstance(ctx, value);
+    }
+};
+
+template <>
+struct Stack<long unsigned int>
+{
+    static void pushLua(EContext* ctx, long unsigned int value)
+    {
+        lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
+    }
+
+    static JSValue pushJS(EContext* ctx, long unsigned int value)
+    {
+        return JS_NewUint32((JSContext*)(ctx->GetState()), value);
+    }
+
+    static long unsigned int getLua(EContext* ctx, int ref)
+    {
+        return (long unsigned int)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
+    }
+
+    static long unsigned int getJS(EContext* ctx, JSValue value)
+    {
+        unsigned int val;
+        JS_ToUint32((JSContext*)(ctx->GetState()), &val, value);
+        return (long unsigned int)val;
     }
 
     static bool isLuaInstance(EContext* ctx, int ref)
