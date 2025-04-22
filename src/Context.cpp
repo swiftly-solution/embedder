@@ -20,27 +20,29 @@ static const luaL_Reg lualibs[] = {
     {NULL, NULL},
 };
 
-JSRuntime *rt = nullptr;
+JSRuntime* rt = nullptr;
 
-void CheckAndPopulateRegexFunctions(std::map<std::string, std::vector<void *>>& validCalls, std::map<std::string, std::vector<void *>>& calls, std::map<std::string, void *>& functions, std::string function_key, bool forceRegenerate = false) {
-    for(auto it = functions.begin(); it != functions.end(); ++it) {
-        validCalls[it->first].clear();
+void CheckAndPopulateRegexFunctions(std::map<std::string, std::vector<void*>>& validCalls, std::map<std::string, std::vector<void*>>& calls, std::map<std::string, void*>& functions, std::string function_key, bool forceRegenerate = false) {
+    for (auto it = functions.begin(); it != functions.end(); ++it) {
         try {
             if (std::regex_search(it->first, std::regex(function_key.c_str(), std::regex_constants::ECMAScript | std::regex_constants::optimize | std::regex_constants::nosubs))) {
-                for (void *func : calls[function_key]) validCalls[it->first].push_back(func);
+                validCalls[it->first].clear();
+                for (void* func : calls[function_key]) validCalls[it->first].push_back(func);
             }
-        } catch(std::regex_error& e) {}
+        }
+        catch (std::regex_error& e) {}
     }
 }
 
-void CheckAndPopulateRegexFunctionsPair(std::map<std::string, std::vector<std::pair<void *, void *>>>& validCalls, std::map<std::string, std::vector<std::pair<void *, void *>>>& calls, std::map<std::string, std::pair<void *, void *>>& functions, std::string function_key, bool forceRegenerate = false) {
-    for(auto it = functions.begin(); it != functions.end(); ++it) {
-        validCalls[it->first].clear();
+void CheckAndPopulateRegexFunctionsPair(std::map<std::string, std::vector<std::pair<void*, void*>>>& validCalls, std::map<std::string, std::vector<std::pair<void*, void*>>>& calls, std::map<std::string, std::pair<void*, void*>>& functions, std::string function_key, bool forceRegenerate = false) {
+    for (auto it = functions.begin(); it != functions.end(); ++it) {
         try {
             if (std::regex_search(it->first, std::regex(function_key.c_str(), std::regex_constants::ECMAScript | std::regex_constants::optimize | std::regex_constants::nosubs))) {
-                for (std::pair<void *, void *> func : calls[function_key]) validCalls[it->first].push_back(func);
+                validCalls[it->first].clear();
+                for (std::pair<void*, void*> func : calls[function_key]) validCalls[it->first].push_back(func);
             }
-        } catch(std::regex_error& e) {}
+        }
+        catch (std::regex_error& e) {}
     }
 }
 
@@ -51,22 +53,22 @@ EContext::EContext(ContextKinds kind)
     if (kind == ContextKinds::Lua)
     {
         auto state = luaL_newstate();
-        m_state = (void *)state;
+        m_state = (void*)state;
 
-        const luaL_Reg *lib = lualibs;
+        const luaL_Reg* lib = lualibs;
         for (; lib->func; lib++)
             RegisterLuaLib(lib->name, lib->func);
 
         lua_pushglobaltable(state);                 // _G
-        lua_pushlightuserdata(state, (void *)this); // _G, ud
+        lua_pushlightuserdata(state, (void*)this); // _G, ud
         lua_rawsetp(state, -2, getContextKey());    // _G[key] = ud. _G
         lua_pop(state, 1);                          // empty
     }
     else if (kind == ContextKinds::JavaScript)
     {
-        JSRuntime *rt = JS_NewRuntime();
+        JSRuntime* rt = JS_NewRuntime();
         JS_SetMaxStackSize(rt, 0);
-        JSContext *ctx = JS_NewContext(rt);
+        JSContext* ctx = JS_NewContext(rt);
 
         JSValue global_obj = JS_GetGlobalObject(ctx);
         JSValue console_obj = JS_NewObject(ctx);
@@ -77,9 +79,9 @@ EContext::EContext(ContextKinds kind)
 
         JS_FreeValue(ctx, global_obj);
 
-        JS_SetContextOpaque(ctx, (void *)this);
+        JS_SetContextOpaque(ctx, (void*)this);
 
-        m_state = (void *)ctx;
+        m_state = (void*)ctx;
     }
 
     EException::Enable(m_state, m_kind);
@@ -94,11 +96,11 @@ EContext::~EContext()
 
     if (m_kind == ContextKinds::Lua)
     {
-        lua_close((lua_State *)m_state);
+        lua_close((lua_State*)m_state);
     }
     else if (m_kind == ContextKinds::JavaScript)
     {
-        JSContext *ctx = (JSContext *)m_state;
+        JSContext* ctx = (JSContext*)m_state;
         JSRuntime* rt = JS_GetRuntime(ctx);
         JS_FreeContext(ctx);
         JS_FreeRuntime(rt);
@@ -110,25 +112,25 @@ ContextKinds EContext::GetKind()
     return m_kind;
 }
 
-void EContext::RegisterLuaLib(const char *libName, lua_CFunction func)
+void EContext::RegisterLuaLib(const char* libName, lua_CFunction func)
 {
-    luaL_requiref((lua_State *)m_state, libName, func, 1);
-    lua_pop((lua_State *)m_state, 1);
+    luaL_requiref((lua_State*)m_state, libName, func, 1);
+    lua_pop((lua_State*)m_state, 1);
 }
 
 int64_t EContext::GetMemoryUsage()
 {
     if (m_kind == ContextKinds::Lua)
     {
-        int64_t count = lua_gc((lua_State *)m_state, LUA_GCCOUNT, 0);
+        int64_t count = lua_gc((lua_State*)m_state, LUA_GCCOUNT, 0);
         count *= 1024;
-        count += lua_gc((lua_State *)m_state, LUA_GCCOUNTB, 0);
+        count += lua_gc((lua_State*)m_state, LUA_GCCOUNTB, 0);
         return count;
     }
     else if (m_kind == ContextKinds::JavaScript)
     {
         JSMemoryUsage stats;
-        JS_ComputeMemoryUsage(JS_GetRuntime((JSContext *)m_state), &stats);
+        JS_ComputeMemoryUsage(JS_GetRuntime((JSContext*)m_state), &stats);
         return stats.memory_used_size;
     }
     else
@@ -139,16 +141,16 @@ int EContext::RunCode(std::string code)
 {
     if (m_kind == ContextKinds::Lua)
     {
-        int cd = (luaL_dostring((lua_State *)m_state, code.c_str()));
+        int cd = (luaL_dostring((lua_State*)m_state, code.c_str()));
         if (cd != 0)
             EException::Throw(EException(GetState(), GetKind(), cd));
         return cd;
     }
     else if (m_kind == ContextKinds::JavaScript)
     {
-        auto res = JS_Eval((JSContext *)m_state, code.c_str(), code.length(), "runcode.js", JS_EVAL_TYPE_GLOBAL);
+        auto res = JS_Eval((JSContext*)m_state, code.c_str(), code.length(), "runcode.js", JS_EVAL_TYPE_GLOBAL);
         bool isException = JS_IsException(res);
-        JS_FreeValue((JSContext *)m_state, res);
+        JS_FreeValue((JSContext*)m_state, res);
         return (int)isException;
     }
     else
@@ -175,7 +177,7 @@ int EContext::RunFile(std::string path)
 {
     if (m_kind == ContextKinds::Lua)
     {
-        int cd = (luaL_dofile((lua_State *)m_state, path.c_str()));
+        int cd = (luaL_dofile((lua_State*)m_state, path.c_str()));
         if (cd != 0)
             EException::Throw(EException(GetState(), GetKind(), cd));
         return cd;
@@ -183,48 +185,48 @@ int EContext::RunFile(std::string path)
     else if (m_kind == ContextKinds::JavaScript)
     {
         std::string code = files_Read(path);
-        auto res = JS_Eval((JSContext *)m_state, code.c_str(), code.length(), path.c_str(), JS_EVAL_TYPE_GLOBAL);
+        auto res = JS_Eval((JSContext*)m_state, code.c_str(), code.length(), path.c_str(), JS_EVAL_TYPE_GLOBAL);
         bool isException = JS_IsException(res);
-        JS_FreeValue((JSContext *)m_state, res);
+        JS_FreeValue((JSContext*)m_state, res);
         return (int)isException;
     }
     else
         return 0;
 }
 
-void EContext::PushValue(EValue *val)
+void EContext::PushValue(EValue* val)
 {
     if (mappedValues.find(val) != mappedValues.end())
         return;
     mappedValues.insert(val);
 }
 
-void EContext::PopValue(EValue *val)
+void EContext::PopValue(EValue* val)
 {
     if (mappedValues.find(val) == mappedValues.end())
         return;
     mappedValues.erase(val);
 }
 
-void *EContext::GetState()
+void* EContext::GetState()
 {
     return m_state;
 }
 
-lua_State *EContext::GetLuaState()
+lua_State* EContext::GetLuaState()
 {
-    return (lua_State *)m_state;
+    return (lua_State*)m_state;
 }
 
-JSContext *EContext::GetJSState()
+JSContext* EContext::GetJSState()
 {
-    return (JSContext *)m_state;
+    return (JSContext*)m_state;
 }
 
-JSClassID *EContext::GetClassID(std::string className)
+JSClassID* EContext::GetClassID(std::string className)
 {
     if (classIDs.find(className) == classIDs.end())
-        classIDs.insert({className, 0});
+        classIDs.insert({ className, 0 });
 
     return &classIDs[className];
 }
@@ -238,144 +240,144 @@ std::string EContext::GetClsName(JSClassID id)
     return "";
 }
 
-void EContext::AddFunctionCall(std::string key, void *val)
+void EContext::AddFunctionCall(std::string key, void* val)
 {
     functionCalls.insert_or_assign(key, val);
 }
 
-void *EContext::GetFunctionCall(std::string key)
+void* EContext::GetFunctionCall(std::string key)
 {
     if (functionCalls.find(key) == functionCalls.end())
         return nullptr;
     return functionCalls[key];
 }
 
-void EContext::AddFunctionPreCall(std::string key, void *val)
+void EContext::AddFunctionPreCall(std::string key, void* val)
 {
     if (functionPreCalls.find(key) == functionPreCalls.end())
-        functionPreCalls.insert({key, {}});
+        functionPreCalls.insert({ key, {} });
 
     functionPreCalls[key].push_back(val);
     CheckAndPopulateRegexFunctions(functionValidPreCalls, functionPreCalls, functionCalls, key, true);
 }
 
-std::vector<void *> EContext::GetFunctionPreCalls(std::string str_key)
+std::vector<void*> EContext::GetFunctionPreCalls(std::string str_key)
 {
     return functionValidPreCalls[str_key];
 }
 
-void EContext::AddFunctionPostCall(std::string key, void *val)
+void EContext::AddFunctionPostCall(std::string key, void* val)
 {
     if (functionPostCalls.find(key) == functionPostCalls.end())
-        functionPostCalls.insert({key, {}});
+        functionPostCalls.insert({ key, {} });
 
     functionPostCalls[key].push_back(val);
     CheckAndPopulateRegexFunctions(functionValidPostCalls, functionPostCalls, functionCalls, key, true);
 }
 
-std::vector<void *> EContext::GetFunctionPostCalls(std::string str_key)
+std::vector<void*> EContext::GetFunctionPostCalls(std::string str_key)
 {
     return functionValidPostCalls[str_key];
 }
 
-void EContext::AddClassFunctionCalls(std::string key, void *val)
+void EContext::AddClassFunctionCalls(std::string key, void* val)
 {
     classFunctionCalls.insert_or_assign(key, val);
 }
 
-void *EContext::GetClassFunctionCall(std::string key)
+void* EContext::GetClassFunctionCall(std::string key)
 {
     if (classFunctionCalls.find(key) == classFunctionCalls.end())
         return nullptr;
     return classFunctionCalls[key];
 }
 
-void EContext::AddClassFunctionPreCalls(std::string key, void *val)
+void EContext::AddClassFunctionPreCalls(std::string key, void* val)
 {
     if (classFunctionPreCalls.find(key) == classFunctionPreCalls.end())
-        classFunctionPreCalls.insert({key, {}});
+        classFunctionPreCalls.insert({ key, {} });
 
     classFunctionPreCalls[key].push_back(val);
     CheckAndPopulateRegexFunctions(classFunctionValidPreCalls, classFunctionPreCalls, classFunctionCalls, key, true);
 }
 
-std::vector<void *> EContext::GetClassFunctionPreCalls(std::string func_key)
+std::vector<void*> EContext::GetClassFunctionPreCalls(std::string func_key)
 {
     return classFunctionValidPreCalls[func_key];
 }
 
-void EContext::AddClassFunctionPostCalls(std::string key, void *val)
+void EContext::AddClassFunctionPostCalls(std::string key, void* val)
 {
     if (classFunctionPostCalls.find(key) == classFunctionPostCalls.end())
-        classFunctionPostCalls.insert({key, {}});
+        classFunctionPostCalls.insert({ key, {} });
 
     classFunctionPostCalls[key].push_back(val);
     CheckAndPopulateRegexFunctions(classFunctionValidPostCalls, classFunctionPostCalls, classFunctionCalls, key, true);
 }
 
-std::vector<void *> EContext::GetClassFunctionPostCalls(std::string func_key)
+std::vector<void*> EContext::GetClassFunctionPostCalls(std::string func_key)
 {
     return classFunctionValidPostCalls[func_key];
 }
 
-void EContext::AddClassMemberCalls(std::string key, std::pair<void *, void *> val)
+void EContext::AddClassMemberCalls(std::string key, std::pair<void*, void*> val)
 {
     classMemberCalls.insert_or_assign(key, val);
 }
 
-std::pair<void *, void *> EContext::GetClassMemberCalls(std::string key)
+std::pair<void*, void*> EContext::GetClassMemberCalls(std::string key)
 {
     if (classMemberCalls.find(key) == classMemberCalls.end())
-        return {nullptr, nullptr};
+        return { nullptr, nullptr };
     return classMemberCalls[key];
 }
 
-void EContext::AddClassMemberPreCalls(std::string key, std::pair<void *, void *> val)
+void EContext::AddClassMemberPreCalls(std::string key, std::pair<void*, void*> val)
 {
     if (classMemberPreCalls.find(key) == classMemberPreCalls.end())
-        classMemberPreCalls.insert({key, {}});
+        classMemberPreCalls.insert({ key, {} });
 
     classMemberPreCalls[key].push_back(val);
     CheckAndPopulateRegexFunctionsPair(classMemberValidPreCalls, classMemberPreCalls, classMemberCalls, key, true);
 }
 
-std::vector<std::pair<void *, void *>> EContext::GetClassMemberPreCalls(std::string func_key)
+std::vector<std::pair<void*, void*>> EContext::GetClassMemberPreCalls(std::string func_key)
 {
     return classMemberValidPreCalls[func_key];
 }
 
-void EContext::AddClassMemberPostCalls(std::string key, std::pair<void *, void *> val)
+void EContext::AddClassMemberPostCalls(std::string key, std::pair<void*, void*> val)
 {
     if (classMemberPostCalls.find(key) == classMemberPostCalls.end())
-        classMemberPostCalls.insert({key, {}});
+        classMemberPostCalls.insert({ key, {} });
 
     classMemberPostCalls[key].push_back(val);
     CheckAndPopulateRegexFunctionsPair(classMemberValidPostCalls, classMemberPostCalls, classMemberCalls, key, true);
 }
 
-std::vector<std::pair<void *, void *>> EContext::GetClassMemberPostCalls(std::string func_key)
+std::vector<std::pair<void*, void*>> EContext::GetClassMemberPostCalls(std::string func_key)
 {
     return classMemberValidPostCalls[func_key];
 }
 
-JSValue &EContext::GetClassPrototype(std::string className)
+JSValue& EContext::GetClassPrototype(std::string className)
 {
     if (classPrototypes.find(className) == classPrototypes.end())
-        classPrototypes.insert({className, JS_NewObject(GetJSState())});
+        classPrototypes.insert({ className, JS_NewObject(GetJSState()) });
 
     return classPrototypes[className];
 }
 
-EContext *GetContextByState(JSContext *ctx)
+EContext* GetContextByState(JSContext* ctx)
 {
-    return (EContext *)JS_GetContextOpaque(ctx);
+    return (EContext*)JS_GetContextOpaque(ctx);
 }
 
-EContext *GetContextByState(lua_State *ctx)
+EContext* GetContextByState(lua_State* ctx)
 {
     lua_pushglobaltable(ctx);
     lua_rawgetp(ctx, -1, getContextKey());
     auto ud = lua_touserdata(ctx, -1);
     lua_pop(ctx, 2);
-    return (EContext *)ud;
+    return (EContext*)ud;
 }

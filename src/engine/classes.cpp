@@ -7,7 +7,7 @@
 
 int LuaMemberCallbackIndex(lua_State* L, std::string str_key);
 int LuaMemberCallbackNewIndex(lua_State* L, std::string str_key);
-int LuaClassFunctionCall(lua_State *L);
+int LuaClassFunctionCall(lua_State* L);
 
 bool str_startswith(std::string value, std::string starting)
 {
@@ -23,16 +23,13 @@ int LuaClassIndex(lua_State* L)
     std::string member_name = Stack<std::string>::getLua(ctx, 2);
 
     std::string str_key = class_name + " " + member_name;
-    if(ctx->GetClassMemberCalls(str_key).first) {
-        return LuaMemberCallbackIndex(L, str_key);
-    } else if(ctx->GetClassFunctionCall(str_key)) {
+    if (ctx->GetClassFunctionCall(str_key)) {
         lua_pushstring(L, str_key.c_str());
         lua_pushcclosure(L, LuaClassFunctionCall, 1);
         return 1;
     }
 
-    lua_pushnil(L);
-    return 1;
+    return LuaMemberCallbackIndex(L, str_key);
 }
 
 int LuaClassNewIndex(lua_State* L)
@@ -42,22 +39,19 @@ int LuaClassNewIndex(lua_State* L)
     std::string member_name = Stack<std::string>::getLua(ctx, 2);
     std::string str_key = class_name + " " + member_name;
 
-    if(ctx->GetClassMemberCalls(str_key).first != nullptr) {
-        return LuaMemberCallbackNewIndex(L, str_key);
-    }
-    return 0;
+    return LuaMemberCallbackNewIndex(L, str_key);
 }
 
-int LuaClassFunctionCall(lua_State *L)
+int LuaClassFunctionCall(lua_State* L)
 {
     std::string str_key = lua_tostring(L, lua_upvalueindex(1));
     auto ctx = GetContextByState(L);
 
     auto splits = str_split(str_key, " ");
     FunctionContext fctx(str_key, ctx->GetKind(), ctx, splits[0] != splits[1], splits[0] == splits[1], false);
-    FunctionContext *fptr = &fctx;
+    FunctionContext* fptr = &fctx;
 
-    ClassData *data = nullptr;
+    ClassData* data = nullptr;
     bool ignoreCustomReturn = false;
 
     auto functionPreCalls = ctx->GetClassFunctionPreCalls(str_key);
@@ -79,7 +73,7 @@ int LuaClassFunctionCall(lua_State *L)
         data = Stack<ClassData*>::getLua(ctx, 1);
     }
 
-    for (void *func : functionPreCalls)
+    for (void* func : functionPreCalls)
     {
         reinterpret_cast<ScriptingClassFunctionCallback>(func)(fptr, data);
         if (fctx.ShouldStopExecution())
@@ -90,13 +84,13 @@ int LuaClassFunctionCall(lua_State *L)
     }
 
     if (!stopExecution) {
-        void *func = ctx->GetClassFunctionCall(str_key);
+        void* func = ctx->GetClassFunctionCall(str_key);
         if (func) {
             ScriptingClassFunctionCallback cb = reinterpret_cast<ScriptingClassFunctionCallback>(func);
             cb(fptr, data);
         }
-    
-        for (void *func : functionPostCalls)
+
+        for (void* func : functionPostCalls)
         {
             reinterpret_cast<ScriptingClassFunctionCallback>(func)(fptr, data);
             if (fctx.ShouldStopExecution()) break;
@@ -110,14 +104,14 @@ int LuaClassFunctionCall(lua_State *L)
     return hasResult;
 }
 
-JSValue JSClassCallback(JSContext *L, JSValue this_val, int argc, JSValue *argv, int magic, JSValue *func_data)
+JSValue JSClassCallback(JSContext* L, JSValue this_val, int argc, JSValue* argv, int magic, JSValue* func_data)
 {
     auto ctx = GetContextByState(L);
     std::string str_key = Stack<std::string>::getJS(ctx, func_data[0]);
 
     FunctionContext fctx(str_key, ctx->GetKind(), ctx, argv, argc);
-    FunctionContext *fptr = &fctx;
-    ClassData *data = nullptr;
+    FunctionContext* fptr = &fctx;
+    ClassData* data = nullptr;
     bool ignoreCustomReturn = false;
 
     auto functionPreCalls = ctx->GetClassFunctionPreCalls(str_key);
@@ -130,8 +124,8 @@ JSValue JSClassCallback(JSContext *L, JSValue this_val, int argc, JSValue *argv,
     {
         data = new ClassData({}, splits[0], ctx);
         ret = Stack<ClassData*>::pushJS(ctx, data);
-        
-        if(JS_IsException(ret)) {
+
+        if (JS_IsException(ret)) {
             delete data;
             return ret;
         }
@@ -140,10 +134,10 @@ JSValue JSClassCallback(JSContext *L, JSValue this_val, int argc, JSValue *argv,
     }
     else
     {
-        data = (ClassData *)JS_GetOpaque(this_val, *ctx->GetClassID(splits[0]));
+        data = (ClassData*)JS_GetOpaque(this_val, *ctx->GetClassID(splits[0]));
     }
 
-    for (void *func : functionPreCalls)
+    for (void* func : functionPreCalls)
     {
         reinterpret_cast<ScriptingClassFunctionCallback>(func)(fptr, data);
         if (fctx.ShouldStopExecution())
@@ -154,13 +148,13 @@ JSValue JSClassCallback(JSContext *L, JSValue this_val, int argc, JSValue *argv,
     }
 
     if (!stopExecution) {
-        void *func = ctx->GetClassFunctionCall(str_key);
+        void* func = ctx->GetClassFunctionCall(str_key);
         if (func) {
             ScriptingClassFunctionCallback cb = reinterpret_cast<ScriptingClassFunctionCallback>(func);
             cb(fptr, data);
         }
-    
-        for (void *func : functionPostCalls)
+
+        for (void* func : functionPostCalls)
         {
             reinterpret_cast<ScriptingClassFunctionCallback>(func)(fptr, data);
             if (fctx.ShouldStopExecution()) break;
@@ -172,7 +166,7 @@ JSValue JSClassCallback(JSContext *L, JSValue this_val, int argc, JSValue *argv,
     else return JS_UNDEFINED;
 }
 
-void AddScriptingClass(EContext *ctx, std::string class_name)
+void AddScriptingClass(EContext* ctx, std::string class_name)
 {
     if (ctx->GetKind() == ContextKinds::Lua)
     {
@@ -196,42 +190,43 @@ void AddScriptingClass(EContext *ctx, std::string class_name)
     else if (ctx->GetKind() == ContextKinds::JavaScript)
     {
         auto L = ctx->GetJSState();
-        auto &classID = *ctx->GetClassID(class_name);
+        auto& classID = *ctx->GetClassID(class_name);
         if (classID != 0)
             return;
 
-        JSRuntime *rt = JS_GetRuntime(L);
+        JSRuntime* rt = JS_GetRuntime(L);
         JS_NewClassID(rt, &classID);
 
         JSClassDef class_def = {
-            class_name.c_str()};
+            class_name.c_str() };
         class_def.finalizer = CHelpers::JSGCFunction;
 
         JS_NewClass(rt, classID, &class_def);
     }
 }
 
-void AddScriptingClassFunction(EContext *ctx, std::string class_name, std::string function_name, ScriptingClassFunctionCallback callback)
+void AddScriptingClassFunction(EContext* ctx, std::string class_name, std::string function_name, ScriptingClassFunctionCallback callback)
 {
     if (ctx->GetKind() == ContextKinds::Lua)
     {
         auto L = ctx->GetLuaState();
 
         std::string func_key = class_name + " " + function_name;
-        ctx->AddClassFunctionCalls(func_key, reinterpret_cast<void *>(callback));
+        ctx->AddClassFunctionCalls(func_key, reinterpret_cast<void*>(callback));
 
         if (function_name == class_name)
         {
             lua_pushstring(L, func_key.c_str());
             lua_pushcclosure(L, LuaClassFunctionCall, 1);
             lua_setglobal(L, class_name.c_str());
-        } else if(str_startswith(function_name, "__")) {
+        }
+        else if (str_startswith(function_name, "__")) {
             luaL_getmetatable(L, class_name.c_str());
-            
+
             lua_pushstring(L, func_key.c_str());
             lua_pushcclosure(L, LuaClassFunctionCall, 1);
             rawsetfield(L, -2, function_name.c_str());
-            
+
             lua_pop(L, 1);
         }
     }
@@ -240,48 +235,48 @@ void AddScriptingClassFunction(EContext *ctx, std::string class_name, std::strin
         auto L = ctx->GetJSState();
 
         std::string func_key = class_name + " " + function_name;
-        ctx->AddClassFunctionCalls(func_key, reinterpret_cast<void *>(callback));
+        ctx->AddClassFunctionCalls(func_key, reinterpret_cast<void*>(callback));
 
         if (function_name == class_name)
         {
             auto ns = JS_GetGlobalObject(L);
-            std::vector<JSValue> vals = {Stack<std::string>::pushJS(ctx, func_key)};
+            std::vector<JSValue> vals = { Stack<std::string>::pushJS(ctx, func_key) };
             JS_SetPropertyStr(L, ns, class_name.c_str(), JS_NewCFunctionData(L, JSClassCallback, 0, 1, 1, vals.data()));
             JS_FreeValue(L, ns);
         }
         else
         {
-            auto &proto = ctx->GetClassPrototype(class_name);
+            auto& proto = ctx->GetClassPrototype(class_name);
 
-            std::vector<JSValue> vals = {Stack<std::string>::pushJS(ctx, func_key)};
+            std::vector<JSValue> vals = { Stack<std::string>::pushJS(ctx, func_key) };
             JS_SetPropertyStr(L, proto, function_name.c_str(), JS_NewCFunctionData(L, JSClassCallback, 0, 1, 1, vals.data()));
         }
     }
 }
 
-void AddScriptingClassFunctionPre(EContext *ctx, std::string class_name, std::string function_name, ScriptingClassFunctionCallback callback)
+void AddScriptingClassFunctionPre(EContext* ctx, std::string class_name, std::string function_name, ScriptingClassFunctionCallback callback)
 {
     auto func_key = class_name + " " + function_name;
-    ctx->AddClassFunctionPreCalls(func_key, reinterpret_cast<void *>(callback));
+    ctx->AddClassFunctionPreCalls(func_key, reinterpret_cast<void*>(callback));
 }
 
-void AddScriptingClassFunctionPost(EContext *ctx, std::string class_name, std::string function_name, ScriptingClassFunctionCallback callback)
+void AddScriptingClassFunctionPost(EContext* ctx, std::string class_name, std::string function_name, ScriptingClassFunctionCallback callback)
 {
     auto func_key = class_name + " " + function_name;
-    ctx->AddClassFunctionPostCalls(func_key, reinterpret_cast<void *>(callback));
+    ctx->AddClassFunctionPostCalls(func_key, reinterpret_cast<void*>(callback));
 }
 
-EValue CreateScriptingClassInstance(FunctionContext *context, std::string class_name, std::map<std::string, std::any> classdata)
+EValue CreateScriptingClassInstance(FunctionContext* context, std::string class_name, std::map<std::string, std::any> classdata)
 {
     return CreateScriptingClassInstance(context->GetPluginContext(), class_name, classdata);
 }
 
-EValue CreateScriptingClassInstance(EContext *context, std::string class_name, std::map<std::string, std::any> classdata)
+EValue CreateScriptingClassInstance(EContext* context, std::string class_name, std::map<std::string, std::any> classdata)
 {
     if (context->GetKind() == ContextKinds::Lua)
     {
         auto L = context->GetLuaState();
-        ClassData *data = new ClassData(classdata, class_name, context);
+        ClassData* data = new ClassData(classdata, class_name, context);
         Stack<ClassData*>::pushLua(context, data);
         MarkDeleteOnGC(data);
 
@@ -292,7 +287,7 @@ EValue CreateScriptingClassInstance(EContext *context, std::string class_name, s
         auto L = context->GetJSState();
         auto data = new ClassData(classdata, class_name, context);
         auto ret = Stack<ClassData*>::pushJS(context, data);
-        if(JS_IsException(ret)) {
+        if (JS_IsException(ret)) {
             delete data;
             return EValue(context);
         }
