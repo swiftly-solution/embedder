@@ -344,7 +344,7 @@ public:
         if (m_ctx->GetKind() == ContextKinds::Lua) {
             pushLua();
             pushLuaArguments(std::forward<Params>(params)...);
-            EException::pcall(m_ctx, sizeof...(params), 1);
+            EException::xpcall(m_ctx, sizeof...(params), 1);
             return EValue::fromLuaStack(m_ctx);
         }
         else if (m_ctx->GetKind() == ContextKinds::JavaScript) {
