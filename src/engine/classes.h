@@ -22,6 +22,10 @@ public:
 
     void SetData(std::string key, std::any value);
 
+    std::any GetAnyData(std::string key) {
+        return m_classData[key];
+    }
+
     template <class T>
     T GetData(std::string key)
     {
