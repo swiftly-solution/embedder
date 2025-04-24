@@ -360,14 +360,6 @@ std::vector<std::pair<void*, void*>> EContext::GetClassMemberPostCalls(std::stri
     return classMemberValidPostCalls[func_key];
 }
 
-JSValue& EContext::GetClassPrototype(std::string className)
-{
-    if (classPrototypes.find(className) == classPrototypes.end())
-        classPrototypes.insert({ className, JS_NewObject(GetJSState()) });
-
-    return classPrototypes[className];
-}
-
 EContext* GetContextByState(JSContext* ctx)
 {
     return (EContext*)JS_GetContextOpaque(ctx);

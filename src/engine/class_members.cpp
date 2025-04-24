@@ -97,15 +97,14 @@ int LuaMemberCallbackNewIndex(lua_State* L, std::string str_key)
     return hasResult;
 }
 
-JSValue JSMemberGetCallback(JSContext* L, JSValue this_val, int argc, JSValue* argv, int magic, JSValue* func_data)
+JSValue JSClassMemberIndex(JSContext* L, std::string str_key, JSValue* argv)
 {
     auto ctx = GetContextByState(L);
-    std::string str_key = Stack<std::string>::getJS(ctx, func_data[0]);
 
-    FunctionContext fctx(str_key, ctx->GetKind(), ctx, argv, argc);
+    FunctionContext fctx(str_key, ctx->GetKind(), ctx, argv, 0);
     FunctionContext* fptr = &fctx;
 
-    ClassData* data = (ClassData*)JS_GetOpaque(this_val, *ctx->GetClassID(str_split(str_key, " ")[0]));
+    ClassData* data = (ClassData*)JS_GetOpaque(argv[2], *ctx->GetClassID(str_split(str_key, " ")[0]));
 
     auto functionPreCalls = ctx->GetClassMemberPreCalls(str_key);
     auto functionPostCalls = ctx->GetClassMemberPostCalls(str_key);
@@ -140,15 +139,15 @@ JSValue JSMemberGetCallback(JSContext* L, JSValue this_val, int argc, JSValue* a
     return JS_UNDEFINED;
 }
 
-JSValue JSMemberSetCallback(JSContext* L, JSValue this_val, int argc, JSValue* argv, int magic, JSValue* func_data)
+JSValue JSClassMemberNewIndex(JSContext* L, std::string str_key, JSValue* argv)
 {
     auto ctx = GetContextByState(L);
-    std::string str_key = Stack<std::string>::getJS(ctx, func_data[0]);
 
-    FunctionContext fctx(str_key, ctx->GetKind(), ctx, argv, argc);
+    JSValue args[1] = { argv[2] };
+    FunctionContext fctx(str_key, ctx->GetKind(), ctx, args, 1);
     FunctionContext* fptr = &fctx;
 
-    ClassData* data = (ClassData*)JS_GetOpaque(this_val, *ctx->GetClassID(str_split(str_key, " ")[0]));
+    ClassData* data = (ClassData*)JS_GetOpaque(argv[3], *ctx->GetClassID(str_split(str_key, " ")[0]));
 
     auto functionPreCalls = ctx->GetClassMemberPreCalls(str_key);
     auto functionPostCalls = ctx->GetClassMemberPostCalls(str_key);
@@ -185,30 +184,8 @@ JSValue JSMemberSetCallback(JSContext* L, JSValue this_val, int argc, JSValue* a
 
 void AddScriptingClassMember(EContext* ctx, std::string class_name, std::string member_name, ScriptingClassFunctionCallback callback_get, ScriptingClassFunctionCallback callback_set)
 {
-    if (ctx->GetKind() == ContextKinds::Lua) {
-        auto L = ctx->GetLuaState();
-
-        std::string func_key = class_name + " " + member_name;
-        ctx->AddClassMemberCalls(func_key, { reinterpret_cast<void*>(callback_get), reinterpret_cast<void*>(callback_set) });
-    }
-    else if (ctx->GetKind() == ContextKinds::JavaScript) {
-        auto L = ctx->GetJSState();
-
-        std::string func_key = class_name + " " + member_name;
-        ctx->AddClassMemberCalls(func_key, { reinterpret_cast<void*>(callback_get), reinterpret_cast<void*>(callback_set) });
-
-        auto& proto = ctx->GetClassPrototype(class_name);
-        JSAtom atom = JS_NewAtom(L, member_name.c_str());
-
-        std::vector<JSValue> vals = { Stack<std::string>::pushJS(ctx, func_key) };
-        JS_DefinePropertyGetSet(L, proto, atom,
-            JS_NewCFunctionData(L, JSMemberGetCallback, 0, 0, 1, vals.data()),
-            JS_NewCFunctionData(L, JSMemberSetCallback, 1, 0, 1, vals.data()),
-            0
-        );
-
-        JS_FreeAtom(L, atom);
-    }
+    std::string func_key = class_name + " " + member_name;
+    ctx->AddClassMemberCalls(func_key, { reinterpret_cast<void*>(callback_get), reinterpret_cast<void*>(callback_set) });
 }
 
 void AddScriptingClassMemberPre(EContext* ctx, std::string class_name, std::string member_name, ScriptingClassFunctionCallback callback_get, ScriptingClassFunctionCallback callback_set)

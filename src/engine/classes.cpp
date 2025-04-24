@@ -16,6 +16,38 @@ bool str_startswith(std::string value, std::string starting)
     return std::equal(starting.begin(), starting.end(), value.begin());
 }
 
+JSValue JSClassCallback(JSContext* L, JSValue this_val, int argc, JSValue* argv, int magic, JSValue* func_data);
+JSValue JSClassMemberIndex(JSContext* L, std::string str_key, JSValue* argv);
+JSValue JSClassMemberNewIndex(JSContext* L, std::string str_key, JSValue* argv);
+
+JSValue JSClassIndex(JSContext* L, JSValue this_val, int argc, JSValue* argv)
+{
+    auto ctx = GetContextByState(L);
+
+    std::string class_name = Stack<ClassData*>::getJS(ctx, argv[2])->GetClassname();
+    std::string member_name = Stack<std::string>::getJS(ctx, argv[1]);
+
+    std::string str_key = class_name + " " + member_name;
+    if (ctx->GetClassFunctionCall(str_key)) {
+        JSValue v[1] = { Stack<std::string>::pushJS(ctx, str_key) };
+        JSValue func = JS_NewCFunctionData(L, JSClassCallback, 0, 1, 1, (JSValue*)(v));
+        return func;
+    }
+
+    return JSClassMemberIndex(L, str_key, argv);
+}
+
+JSValue JSClassNewIndex(JSContext* L, JSValue this_val, int argc, JSValue* argv)
+{
+    auto ctx = GetContextByState(L);
+
+    std::string class_name = Stack<ClassData*>::getJS(ctx, argv[3])->GetClassname();
+    std::string member_name = Stack<std::string>::getJS(ctx, argv[1]);
+    std::string str_key = class_name + " " + member_name;
+
+    return JSClassMemberNewIndex(L, str_key, argv);
+}
+
 int LuaClassIndex(lua_State* L)
 {
     auto ctx = GetContextByState(L);
@@ -243,13 +275,6 @@ void AddScriptingClassFunction(EContext* ctx, std::string class_name, std::strin
             std::vector<JSValue> vals = { Stack<std::string>::pushJS(ctx, func_key) };
             JS_SetPropertyStr(L, ns, class_name.c_str(), JS_NewCFunctionData(L, JSClassCallback, 0, 1, 1, vals.data()));
             JS_FreeValue(L, ns);
-        }
-        else
-        {
-            auto& proto = ctx->GetClassPrototype(class_name);
-
-            std::vector<JSValue> vals = { Stack<std::string>::pushJS(ctx, func_key) };
-            JS_SetPropertyStr(L, proto, function_name.c_str(), JS_NewCFunctionData(L, JSClassCallback, 0, 1, 1, vals.data()));
         }
     }
 }

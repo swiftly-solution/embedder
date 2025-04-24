@@ -1269,6 +1269,9 @@ struct Stack<std::pair<T1, T2>>
     }
 };
 
+JSValue JSClassIndex(JSContext* L, JSValue this_val, int argc, JSValue* argv);
+JSValue JSClassNewIndex(JSContext* L, JSValue this_val, int argc, JSValue* argv);
+
 template<>
 struct Stack<ClassData*>
 {
@@ -1295,9 +1298,23 @@ struct Stack<ClassData*>
         }
 
         auto L = ctx->GetJSState();
+
+        JSValue global_obj = JS_GetGlobalObject(L);
+        JSValue proxy_ctor = JS_GetPropertyStr(L, global_obj, "Proxy");
+        JS_FreeValue(L, global_obj);
+
+        JSValue handler = JS_NewObject(L);
+        JS_SetPropertyStr(L, handler, "get", JS_NewCFunction(L, JSClassIndex, "get", 2));
+        JS_SetPropertyStr(L, handler, "set", JS_NewCFunction(L, JSClassNewIndex, "set", 3));
+
+        JSValue args[2] = { JS_NewObject(L), handler };
+        JSValue proxy_obj = JS_CallConstructor(L, proxy_ctor, 2, args);
+
+        JS_FreeValue(L, proxy_ctor);
+        JS_FreeValue(L, handler);
+
         JSClassID& id = *(ctx->GetClassID(value->GetClassname()));
-        auto proto = ctx->GetClassPrototype(value->GetClassname());
-        JS_SetClassProto(L, id, proto);
+        JS_SetClassProto(L, id, proxy_obj);
         auto ret = JS_NewObjectProtoClass(L, JS_GetClassProto(L, id), id);
 
         if (JS_IsException(ret))
