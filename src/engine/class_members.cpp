@@ -179,7 +179,7 @@ JSValue JSClassMemberNewIndex(JSContext* L, std::string str_key, JSValue* argv)
 
     if (fctx.HasResult())
         return fctx.pushJSResult();
-    return JS_UNDEFINED;
+    return Stack<bool>::pushJS(ctx, true);
 }
 
 void AddScriptingClassMember(EContext* ctx, std::string class_name, std::string member_name, ScriptingClassFunctionCallback callback_get, ScriptingClassFunctionCallback callback_set)
