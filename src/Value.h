@@ -81,9 +81,10 @@ public:
 
     ~EValue()
     {
+        if (m_ctx) m_ctx->PopValue(this);
+
         if (nofree) return;
 
-        m_ctx->PopValue(this);
         if (m_ctx->GetKind() == ContextKinds::Lua) {
             if (m_ref == LUA_NOREF) return;
             luaL_unref((lua_State*)m_ctx->GetState(), LUA_REGISTRYINDEX, m_ref);
