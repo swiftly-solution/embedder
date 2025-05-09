@@ -13,7 +13,8 @@ int LuaMemberCallbackIndex(lua_State* L, std::string str_key)
     FunctionContext* fptr = &fctx;
 
     auto splits = str_split(str_key, " ");
-    ClassData* data = *(ClassData**)luaL_checkudata(L, 1, splits[0].c_str());
+    ClassData* data = Stack<ClassData*>::getLua(ctx, 1);
+    if (!data) return luaL_error(L, "You can't get a member value from a garbage collected variable. Save the variable somewhere before using it.");
 
     auto functionPreCalls = ctx->GetClassMemberPreCalls(str_key);
     auto functionPostCalls = ctx->GetClassMemberPostCalls(str_key);
@@ -59,7 +60,8 @@ int LuaMemberCallbackNewIndex(lua_State* L, std::string str_key)
     FunctionContext* fptr = &fctx;
 
     auto splits = str_split(str_key, " ");
-    ClassData* data = *(ClassData**)luaL_checkudata(L, 1, splits[0].c_str());
+    ClassData* data = Stack<ClassData*>::getLua(ctx, 1);
+    if (!data) return luaL_error(L, "You can't set a member value from a garbage collected variable. Save the variable somewhere before using it.");
 
     auto functionPreCalls = ctx->GetClassMemberPreCalls(str_key);
     auto functionPostCalls = ctx->GetClassMemberPostCalls(str_key);

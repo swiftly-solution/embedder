@@ -105,6 +105,8 @@ int LuaClassFunctionCall(lua_State* L)
         data = Stack<ClassData*>::getLua(ctx, 1);
     }
 
+    if (!data) return luaL_error(L, "You can't call a member function from a garbage collected variable. Save the variable somewhere before using it.");
+
     for (void* func : functionPreCalls)
     {
         reinterpret_cast<ScriptingClassFunctionCallback>(func)(fptr, data);
