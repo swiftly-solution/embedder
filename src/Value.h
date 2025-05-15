@@ -81,9 +81,9 @@ public:
 
     ~EValue()
     {
-        if (m_ctx) m_ctx->PopValue(this);
-
         if (nofree) return;
+
+        if (m_ctx) m_ctx->PopValue(this);
 
         if (m_ctx->GetKind() == ContextKinds::Lua) {
             if (m_ref == LUA_NOREF) return;
