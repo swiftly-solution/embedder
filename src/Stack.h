@@ -1280,6 +1280,9 @@ struct Stack<ClassData*>
         if (ShouldDeleteOnGC(value)) {
             value = new ClassData(*value);
             MarkDeleteOnGC(value);
+
+            std::vector<ClassData**> emptyData{};
+            value->SetData("lua_udatas", emptyData);
         }
 
         auto L = ctx->GetLuaState();
@@ -1288,6 +1291,10 @@ struct Stack<ClassData*>
 
         luaL_getmetatable(L, value->GetClassname().c_str());
         lua_setmetatable(L, -2);
+
+        std::vector<ClassData**> udatas = value->GetDataOr<std::vector<ClassData**>>("lua_udatas", std::vector<ClassData**>{});
+        udatas.push_back(udata);
+        value->SetData("lua_udatas", udatas);
     }
 
     static JSValue pushJS(EContext* ctx, ClassData* value)
@@ -1325,6 +1332,23 @@ struct Stack<ClassData*>
         else
         {
             JS_SetOpaque(ret, (void*)value);
+
+            std::vector<JSRuntime*> rts = value->GetDataOr<std::vector<JSRuntime*>>("js_runtimes", std::vector<JSRuntime*>{});
+            bool found = false;
+
+            auto rt = JS_GetRuntime(L);
+
+            for (int i = 0; i < rts.size(); i++) {
+                if (rts[i] == rt) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                rts.push_back(rt);
+                value->SetData("js_runtimes", rts);
+            }
         }
 
         return ret;
@@ -1338,7 +1362,13 @@ struct Stack<ClassData*>
 
     static ClassData* getJS(EContext* ctx, JSValue value)
     {
-        return (ClassData*)JS_GetOpaque(value, JS_GetClassID(value));
+        auto vl = (ClassData*)JS_GetOpaque(value, JS_GetClassID(value));
+
+        auto deletedClassDatas = (std::set<ClassData*>*)JS_GetRuntimeOpaque(JS_GetRuntime(ctx->GetJSState()));
+        if (!deletedClassDatas) return vl;
+
+        if (deletedClassDatas->find(vl) != deletedClassDatas->end()) return nullptr;
+        return vl;
     }
 
     static bool isLuaInstance(EContext* ctx, int ref)

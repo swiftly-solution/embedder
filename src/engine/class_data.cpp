@@ -12,6 +12,25 @@ ClassData::ClassData(std::map<std::string, std::any> data, std::string className
 
 ClassData::~ClassData()
 {
+    std::vector<ClassData**> udatas = GetDataOr<std::vector<ClassData**>>("lua_udatas", std::vector<ClassData**>{});
+    for (int i = 0; i < udatas.size(); i++) {
+        ClassData** udata = udatas[i];
+        (*udata) = nullptr;
+    }
+
+    std::vector<JSRuntime*> rts = GetDataOr<std::vector<JSRuntime*>>("js_runtimes", std::vector<JSRuntime*>{});
+    for (int i = 0; i < rts.size(); i++) {
+        if (JS_GetRuntimeOpaque(rts[i]) == nullptr) {
+            auto dt = new std::set<ClassData*>{};
+            JS_SetRuntimeOpaque(rts[i], dt);
+        }
+
+        auto val = (std::set<ClassData*>*)JS_GetRuntimeOpaque(rts[i]);
+        if (!val) continue;
+
+        val->insert(this);
+    }
+
     if (!m_ctx) return;
     std::string str_key = m_className + " ~" + m_className;
     void* func = m_ctx->GetClassFunctionCall(str_key);
@@ -28,7 +47,7 @@ ClassData::~ClassData()
     bool stopExecution = false;
     JSValue ret = JS_UNDEFINED;
 
-    for (void *func : functionPreCalls)
+    for (void* func : functionPreCalls)
     {
         reinterpret_cast<ScriptingClassFunctionCallback>(func)(fptr, data);
         if (fctx.ShouldStopExecution())
@@ -41,7 +60,7 @@ ClassData::~ClassData()
     if (!stopExecution) {
         cb(fptr, data);
 
-        for (void *func : functionPostCalls)
+        for (void* func : functionPostCalls)
         {
             reinterpret_cast<ScriptingClassFunctionCallback>(func)(fptr, data);
             if (fctx.ShouldStopExecution()) break;

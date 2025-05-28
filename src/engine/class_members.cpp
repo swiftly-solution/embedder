@@ -106,7 +106,7 @@ JSValue JSClassMemberIndex(JSContext* L, std::string str_key, JSValue* argv)
     FunctionContext fctx(str_key, ctx->GetKind(), ctx, argv, 0);
     FunctionContext* fptr = &fctx;
 
-    ClassData* data = (ClassData*)JS_GetOpaque(argv[2], *ctx->GetClassID(str_split(str_key, " ")[0]));
+    ClassData* data = Stack<ClassData*>::getJS(ctx, argv[2]);
 
     auto functionPreCalls = ctx->GetClassMemberPreCalls(str_key);
     auto functionPostCalls = ctx->GetClassMemberPostCalls(str_key);
@@ -149,7 +149,7 @@ JSValue JSClassMemberNewIndex(JSContext* L, std::string str_key, JSValue* argv)
     FunctionContext fctx(str_key, ctx->GetKind(), ctx, args, 1);
     FunctionContext* fptr = &fctx;
 
-    ClassData* data = (ClassData*)JS_GetOpaque(argv[3], *ctx->GetClassID(str_split(str_key, " ")[0]));
+    ClassData* data = Stack<ClassData*>::getJS(ctx, argv[3]);
 
     auto functionPreCalls = ctx->GetClassMemberPreCalls(str_key);
     auto functionPostCalls = ctx->GetClassMemberPostCalls(str_key);

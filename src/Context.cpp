@@ -103,6 +103,11 @@ EContext::~EContext()
         JSContext* ctx = (JSContext*)m_state;
         JSRuntime* rt = JS_GetRuntime(ctx);
         JS_FreeContext(ctx);
+
+        if (auto rtopaque = JS_GetRuntimeOpaque(rt); rtopaque != nullptr) {
+            delete ((std::set<ClassData*>*)rtopaque);
+        }
+
         JS_FreeRuntime(rt);
     }
 }

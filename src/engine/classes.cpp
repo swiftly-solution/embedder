@@ -24,7 +24,10 @@ JSValue JSClassIndex(JSContext* L, JSValue this_val, int argc, JSValue* argv)
 {
     auto ctx = GetContextByState(L);
 
-    std::string class_name = Stack<ClassData*>::getJS(ctx, argv[2])->GetClassname();
+    auto classData = Stack<ClassData*>::getJS(ctx, argv[2]);
+    if (!classData) return JS_ThrowInternalError(L, "You can't access a member from a garbage collected variable. Save the variable somewhere before using it.");
+
+    std::string class_name = classData->GetClassname();
     std::string member_name = Stack<std::string>::getJS(ctx, argv[1]);
 
     std::string str_key = class_name + " " + member_name;
@@ -41,7 +44,10 @@ JSValue JSClassNewIndex(JSContext* L, JSValue this_val, int argc, JSValue* argv)
 {
     auto ctx = GetContextByState(L);
 
-    std::string class_name = Stack<ClassData*>::getJS(ctx, argv[3])->GetClassname();
+    auto classData = Stack<ClassData*>::getJS(ctx, argv[3]);
+    if (!classData) return JS_ThrowInternalError(L, "You can't set a member from a garbage collected variable. Save the variable somewhere before using it.");
+
+    std::string class_name = classData->GetClassname();
     std::string member_name = Stack<std::string>::getJS(ctx, argv[1]);
     std::string str_key = class_name + " " + member_name;
 
