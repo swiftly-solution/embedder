@@ -5,8 +5,18 @@
             "js/qjs.lib"
         ],
         "linux": [
-            "lua/liblua.a",
-            "js/libqjs.a"
+            "lua/liblua.so",
+            "js/libqjs.so.0"
+        ]
+    },
+    "shared": {
+        "windows": [
+            "lua/lua.dll",
+            "js/qjs.dll"
+        ],
+        "linux": [
+            "lua/liblua.so",
+            "js/libqjs.so.0"
         ]
     },
     "includes": [

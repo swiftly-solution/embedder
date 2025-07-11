@@ -781,7 +781,7 @@ struct Stack<std::vector<T>>
         std::vector<T> v;
 
         JSContext* L = (JSContext*)(ctx->GetState());
-        if (!JS_IsArray(L, value))
+        if (!JS_IsArray(value))
             return v;
 
         uint32_t len = JSGetArrayLength(L, value);
@@ -805,7 +805,7 @@ struct Stack<std::vector<T>>
 
     static bool isJSInstance(EContext* ctx, JSValue value)
     {
-        return JS_IsArray((JSContext*)(ctx->GetState()), value);
+        return JS_IsArray(value);
     }
 };
 
@@ -867,7 +867,7 @@ struct Stack<std::list<T>>
         std::list<T> v;
 
         JSContext* L = (JSContext*)(ctx->GetState());
-        if (!JS_IsArray(L, value))
+        if (!JS_IsArray(value))
             return v;
 
         uint32_t len = JSGetArrayLength(L, value);
@@ -889,7 +889,7 @@ struct Stack<std::list<T>>
 
     static bool isJSInstance(EContext* ctx, JSValue value)
     {
-        return JS_IsArray((JSContext*)(ctx->GetState()), value);
+        return JS_IsArray(value);
     }
 };
 
@@ -951,7 +951,7 @@ struct Stack<std::array<T, s>>
         std::array<T, s> v;
 
         JSContext* L = (JSContext*)(ctx->GetState());
-        if (!JS_IsArray(L, value))
+        if (!JS_IsArray(value))
             return v;
 
         uint32_t len = JSGetArrayLength(L, value);
@@ -976,7 +976,7 @@ struct Stack<std::array<T, s>>
 
     static bool isJSInstance(EContext* ctx, JSValue value)
     {
-        if (!JS_IsArray((JSContext*)(ctx->GetState()), value))
+        if (!JS_IsArray(value))
             return false;
         return JSGetArrayLength((JSContext*)(ctx->GetState()), value) == s;
     }
@@ -1238,7 +1238,7 @@ struct Stack<std::pair<T1, T2>>
         std::pair<T1, T2> v;
 
         JSContext* L = (JSContext*)(ctx->GetState());
-        if (!JS_IsArray(L, value))
+        if (!JS_IsArray(value))
             return v;
 
         uint32_t len = JSGetArrayLength(L, value);
@@ -1263,7 +1263,7 @@ struct Stack<std::pair<T1, T2>>
 
     static bool isJSInstance(EContext* ctx, JSValue value)
     {
-        if (!JS_IsArray((JSContext*)(ctx->GetState()), value))
+        if (!JS_IsArray(value))
             return false;
         return JSGetArrayLength((JSContext*)(ctx->GetState()), value) == 2;
     }

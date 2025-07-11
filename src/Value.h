@@ -228,7 +228,7 @@ public:
 
     bool isTable() {
         if (m_ctx->GetKind() == ContextKinds::Lua) return getLuaType() == LUA_TTABLE;
-        else if (m_ctx->GetKind() == ContextKinds::JavaScript) return JS_IsArray(m_ctx->GetJSState(), m_val) || JS_IsObject(m_val);
+        else if (m_ctx->GetKind() == ContextKinds::JavaScript) return JS_IsArray(m_val) || JS_IsObject(m_val);
         else return false;
     }
 
