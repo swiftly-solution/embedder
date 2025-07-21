@@ -2068,6 +2068,11 @@ struct Stack<ClassData*>
 
     static void pushDotnet(EContext* ctx, CallContext* context, ClassData* value, bool shouldReturn = false)
     {
+        if (ShouldDeleteOnGC(value)) {
+            value = new ClassData(*value);
+            MarkDeleteOnGC(value);
+        }
+
         if (shouldReturn) {
             context->SetReturnType(typesMap[typeid(void*)]);
             context->SetResult(value);

@@ -83,7 +83,7 @@ JSValue JSFunctionCallback(JSContext* L, JSValue this_val, int argc, JSValue* ar
 void DotNetFunctionCallback(EContext* ctx, CallContext& call_ctx)
 {
     std::string str_key = call_ctx.GetNamespace() + " " + call_ctx.GetFunction();
-    FunctionContext fctx(str_key, ctx->GetKind(), ctx, &call_ctx, true);
+    FunctionContext fctx(str_key, ctx->GetKind(), ctx, &call_ctx, true, false);
     FunctionContext* fptr = &fctx;
 
     auto functionPreCalls = ctx->GetFunctionPreCalls(str_key);

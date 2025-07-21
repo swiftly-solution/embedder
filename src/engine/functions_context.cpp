@@ -29,12 +29,13 @@ FunctionContext::FunctionContext(std::string function_key, ContextKinds kind, EC
     reinterpret_cast<ScriptingFunctionCallback>(cb)(this);
 }
 
-FunctionContext::FunctionContext(std::string function_key, ContextKinds kind, EContext* ctx, CallContext* callctx, bool shouldSkipFirstArgument)
+FunctionContext::FunctionContext(std::string function_key, ContextKinds kind, EContext* ctx, CallContext* callctx, bool shouldSkipFirstArgument, bool skipUData)
 {
     m_function_key = function_key;
     m_kind = kind;
     m_ctx = ctx;
     m_shouldSkipFirstArgument = shouldSkipFirstArgument;
+    m_skipCreatedUData = skipUData;
 
     m_vals = (JSValue*)callctx;
 
@@ -80,7 +81,7 @@ int FunctionContext::GetArgumentsCount()
     }
     else if (m_kind == ContextKinds::Dotnet)
     {
-        return ((CallContext*)m_vals)->GetArgumentCount() - (int)m_shouldSkipFirstArgument;
+        return ((CallContext*)m_vals)->GetArgumentCount() - (int)m_shouldSkipFirstArgument - (int)m_skipCreatedUData;
     }
     else
         return 0;

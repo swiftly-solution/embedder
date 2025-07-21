@@ -20,9 +20,18 @@ std::map<std::type_index, int> typesMap = {
 };
 
 void DotNetFunctionCallback(EContext* ctx, CallContext& call_ctx);
+void DotNetMemberCallback(EContext* ctx, CallContext& call_ctx);
+void DotnetClassCallback(EContext* ctx, CallContext& call_ctx);
 
 void Dotnet_InvokeNative(CallData& context)
 {
     CallContext ctx(context);
     if (context.call_kind == (int)CallKind::Function) return DotNetFunctionCallback(ctx.GetArgument<EContext*>(0), ctx);
+    else if (context.call_kind == (int)CallKind::ClassFunction) return DotnetClassCallback(ctx.GetArgument<EContext*>(0), ctx);
+    else if (context.call_kind == (int)CallKind::ClassMember) return DotNetMemberCallback(ctx.GetArgument<EContext*>(0), ctx);
+}
+
+void Dotnet_ClassDataFinalizer(void* plugin_context, void* instance)
+{
+    // @todo: .NET Implementation
 }

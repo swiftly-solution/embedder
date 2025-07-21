@@ -14,7 +14,7 @@ void CloseHostFXR();
 
 int LoadDotnetFile(EContext* ctx, std::string filePath);
 void RemoveDotnetFile(EContext* ctx);
-void InterpretAsString(void* obj, const char* out, int len);
+void InterpretAsString(void* obj, int type, const char* out, int len);
 void* DotnetAllocateContextPointer(int size, int count);
 uint64_t GetDotnetRuntimeMemoryUsage(void* context);
 

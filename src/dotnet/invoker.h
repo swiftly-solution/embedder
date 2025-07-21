@@ -262,5 +262,6 @@ public:
 };
 
 void Dotnet_InvokeNative(CallData& context);
+void Dotnet_ClassDataFinalizer(void* plugin_context, void* instance);
 
 #endif

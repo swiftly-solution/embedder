@@ -15,7 +15,7 @@ hostfxr_handle fxrcxt;
 
 typedef int(CORECLR_DELEGATE_CALLTYPE* load_file_fn)(void* context, const char* filePath, int len);
 typedef void(CORECLR_DELEGATE_CALLTYPE* remove_file_fn)(void* context);
-typedef void(CORECLR_DELEGATE_CALLTYPE* interpret_as_string_fn)(void* object, const char* out, int len);
+typedef void(CORECLR_DELEGATE_CALLTYPE* interpret_as_string_fn)(void* object, int type, const char* out, int len);
 typedef void* (CORECLR_DELEGATE_CALLTYPE* allocate_pointer_fn)(int size, int count);
 typedef uint64_t(CORECLR_DELEGATE_CALLTYPE* get_plugin_memory_fn)(void* context);
 
@@ -83,7 +83,7 @@ bool InitializeHostFXR(std::string origin_path) {
 bool InitializeDotNetAPI() {
     if (!initialized) return false;
 
-    typedef void(CORECLR_DELEGATE_CALLTYPE* custom_loader_fn)(void* binPath);
+    typedef void(CORECLR_DELEGATE_CALLTYPE* custom_loader_fn)(void* invokeNative, void* finalizer);
     static custom_loader_fn custom_loader = nullptr;
 
     if (custom_loader == nullptr) {
@@ -96,7 +96,7 @@ bool InitializeDotNetAPI() {
             return false;
         }
 
-        custom_loader(reinterpret_cast<void*>(Dotnet_InvokeNative));
+        custom_loader(reinterpret_cast<void*>(Dotnet_InvokeNative), reinterpret_cast<void*>(Dotnet_ClassDataFinalizer));
     }
 
     return true;
@@ -124,7 +124,7 @@ int LoadDotnetFile(EContext* ctx, std::string filePath)
     return loadFile(ctx, filePath.c_str(), (int)filePath.size());
 }
 
-void InterpretAsString(void* obj, const char* out, int len)
+void InterpretAsString(void* obj, int type, const char* out, int len)
 {
     if (!initialized) return;
 
@@ -138,7 +138,7 @@ void InterpretAsString(void* obj, const char* out, int len)
         if (returnCode != 0 || interpretAsString == nullptr) return;
     }
 
-    interpretAsString(obj, out, len);
+    interpretAsString(obj, type, out, len);
 }
 
 void RemoveDotnetFile(EContext* ctx)

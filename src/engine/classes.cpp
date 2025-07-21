@@ -206,6 +206,55 @@ JSValue JSClassCallback(JSContext* L, JSValue this_val, int argc, JSValue* argv,
     else return JS_UNDEFINED;
 }
 
+void DotnetClassCallback(EContext* ctx, CallContext& call_ctx)
+{
+    std::string str_key = call_ctx.GetNamespace() + " " + call_ctx.GetFunction();
+    auto splits = str_split(str_key, " ");
+    FunctionContext fctx(str_key, ctx->GetKind(), ctx, &call_ctx, true, splits[0] == splits[1]);
+    FunctionContext* fptr = &fctx;
+
+    ClassData* data = nullptr;
+
+    auto functionPreCalls = ctx->GetClassFunctionPreCalls(str_key);
+    auto functionPostCalls = ctx->GetClassFunctionPostCalls(str_key);
+    bool stopExecution = false;
+
+    if (splits[0] == splits[1])
+    {
+        data = new ClassData({}, splits[0], ctx);
+        Stack<ClassData*>::pushDotnet(ctx, &call_ctx, data, true);
+        MarkDeleteOnGC(data);
+    }
+    else
+    {
+        data = (ClassData*)call_ctx.GetArgument<ClassData*>(1);
+    }
+
+    for (void* func : functionPreCalls)
+    {
+        reinterpret_cast<ScriptingClassFunctionCallback>(func)(fptr, data);
+        if (fctx.ShouldStopExecution())
+        {
+            stopExecution = true;
+            break;
+        }
+    }
+
+    if (!stopExecution) {
+        void* func = ctx->GetClassFunctionCall(str_key);
+        if (func) {
+            ScriptingClassFunctionCallback cb = reinterpret_cast<ScriptingClassFunctionCallback>(func);
+            cb(fptr, data);
+        }
+
+        for (void* func : functionPostCalls)
+        {
+            reinterpret_cast<ScriptingClassFunctionCallback>(func)(fptr, data);
+            if (fctx.ShouldStopExecution()) break;
+        }
+    }
+}
+
 void AddScriptingClass(EContext* ctx, std::string class_name)
 {
     if (ctx->GetKind() == ContextKinds::Lua)
@@ -247,12 +296,12 @@ void AddScriptingClass(EContext* ctx, std::string class_name)
 
 void AddScriptingClassFunction(EContext* ctx, std::string class_name, std::string function_name, ScriptingClassFunctionCallback callback)
 {
+    std::string func_key = class_name + " " + function_name;
+    ctx->AddClassFunctionCalls(func_key, reinterpret_cast<void*>(callback));
+
     if (ctx->GetKind() == ContextKinds::Lua)
     {
         auto L = ctx->GetLuaState();
-
-        std::string func_key = class_name + " " + function_name;
-        ctx->AddClassFunctionCalls(func_key, reinterpret_cast<void*>(callback));
 
         if (function_name == class_name)
         {
@@ -273,10 +322,6 @@ void AddScriptingClassFunction(EContext* ctx, std::string class_name, std::strin
     else if (ctx->GetKind() == ContextKinds::JavaScript)
     {
         auto L = ctx->GetJSState();
-
-        std::string func_key = class_name + " " + function_name;
-        ctx->AddClassFunctionCalls(func_key, reinterpret_cast<void*>(callback));
-
         if (function_name == class_name)
         {
             auto ns = JS_GetGlobalObject(L);

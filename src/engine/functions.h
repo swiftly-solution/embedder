@@ -27,7 +27,7 @@ public:
 
     FunctionContext(std::string function_key, ContextKinds kind, EContext* ctx, bool shouldSkipFirstArgument = false, bool skipCreatedUData = false, bool shouldSkipSecondArgument = false);
     FunctionContext(std::string function_key, ContextKinds kind, EContext* ctx, JSValue* vals, int argc);
-    FunctionContext(std::string function_key, ContextKinds kind, EContext* ctx, CallContext* callctx, bool shouldSkipFirstArgument);
+    FunctionContext(std::string function_key, ContextKinds kind, EContext* ctx, CallContext* callctx, bool shouldSkipFirstArgument = false, bool skipUData = false);
     ~FunctionContext();
 
     bool HasResult();
@@ -68,10 +68,10 @@ public:
         }
         else if (m_kind == ContextKinds::Dotnet)
         {
-            if (index < 0 || index + 1 >((CallContext*)m_vals)->GetArgumentCount() - (int)m_shouldSkipFirstArgument)
+            if (index < 0 || index + 1 >((CallContext*)m_vals)->GetArgumentCount() - (int)m_shouldSkipFirstArgument - (int)m_skipCreatedUData)
                 return *(T*)0;
 
-            return Stack<T>::getDotnet(m_ctx, (CallContext*)m_vals, index + (int)m_shouldSkipFirstArgument);
+            return Stack<T>::getDotnet(m_ctx, (CallContext*)m_vals, index + (int)m_shouldSkipFirstArgument + (int)m_skipCreatedUData);
         }
         else
             return *(T*)0;
@@ -95,12 +95,12 @@ public:
         }
         else if (m_kind == ContextKinds::Dotnet)
         {
-            if (index < 0 || index + 1 >((CallContext*)m_vals)->GetArgumentCount() - (int)m_shouldSkipFirstArgument)
+            if (index < 0 || index + 1 >((CallContext*)m_vals)->GetArgumentCount() - (int)m_shouldSkipFirstArgument - (int)m_skipCreatedUData)
                 return "";
 
             static char out[8192];
             memset(out, 0, sizeof(out));
-            InterpretAsString(const_cast<void*>(((CallContext*)m_vals)->GetArgumentPtr(index + (int)m_shouldSkipFirstArgument)), out, sizeof(out));
+            InterpretAsString(const_cast<void*>(((CallContext*)m_vals)->GetArgumentPtr(index + (int)m_shouldSkipFirstArgument + (int)m_skipCreatedUData)), ((CallContext*)m_vals)->GetArgumentType(index + (int)m_shouldSkipFirstArgument + (int)m_skipCreatedUData), out, sizeof(out));
 
             return std::string(out);
         }
@@ -126,10 +126,10 @@ public:
         }
         else if (m_kind == ContextKinds::Dotnet)
         {
-            if (index < 0 || index >= ((CallContext*)m_vals)->GetArgumentCount() - (int)m_shouldSkipFirstArgument)
+            if (index < 0 || index >= ((CallContext*)m_vals)->GetArgumentCount() - (int)m_shouldSkipFirstArgument - (int)m_skipCreatedUData)
                 return defaultVal;
 
-            return Stack<T>::getDotnet(m_ctx, (CallContext*)m_vals, index + (int)m_shouldSkipFirstArgument);
+            return Stack<T>::getDotnet(m_ctx, (CallContext*)m_vals, index + (int)m_shouldSkipFirstArgument + (int)m_skipCreatedUData);
         }
         else
             return defaultVal;
