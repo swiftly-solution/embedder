@@ -4,18 +4,18 @@
 
 #include <regex>
 
-int LuaFunctionCallback(lua_State *L)
+int LuaFunctionCallback(lua_State* L)
 {
     std::string str_key = lua_tostring(L, lua_upvalueindex(1));
     auto ctx = GetContextByState(L);
 
     FunctionContext fctx(str_key, ctx->GetKind(), ctx);
-    FunctionContext *fptr = &fctx;
-    
+    FunctionContext* fptr = &fctx;
+
     auto functionPreCalls = ctx->GetFunctionPreCalls(str_key);
     auto functionPostCalls = ctx->GetFunctionPostCalls(str_key);
     bool stopExecution = false;
-    
+
     for (void* func : functionPreCalls) {
         reinterpret_cast<ScriptingFunctionCallback>(func)(fptr);
         if (fctx.ShouldStopExecution())
@@ -26,12 +26,12 @@ int LuaFunctionCallback(lua_State *L)
     }
 
     if (!stopExecution) {
-        void *func = ctx->GetFunctionCall(str_key);
+        void* func = ctx->GetFunctionCall(str_key);
         if (func) {
             ScriptingFunctionCallback cb = reinterpret_cast<ScriptingFunctionCallback>(func);
             cb(fptr);
         }
-        
+
         for (void* func : functionPostCalls) {
             reinterpret_cast<ScriptingFunctionCallback>(func)(fptr);
             if (fctx.ShouldStopExecution()) break;
@@ -43,12 +43,12 @@ int LuaFunctionCallback(lua_State *L)
     return hasResult;
 }
 
-JSValue JSFunctionCallback(JSContext *L, JSValue this_val, int argc, JSValue *argv, int magic, JSValue *func_data)
+JSValue JSFunctionCallback(JSContext* L, JSValue this_val, int argc, JSValue* argv, int magic, JSValue* func_data)
 {
     auto ctx = GetContextByState(L);
     std::string str_key = Stack<std::string>::getJS(ctx, func_data[0]);
     FunctionContext fctx(str_key, ctx->GetKind(), ctx, argv, argc);
-    FunctionContext *fptr = &fctx;
+    FunctionContext* fptr = &fctx;
 
     auto functionPreCalls = ctx->GetFunctionPreCalls(str_key);
     auto functionPostCalls = ctx->GetFunctionPostCalls(str_key);
@@ -64,12 +64,12 @@ JSValue JSFunctionCallback(JSContext *L, JSValue this_val, int argc, JSValue *ar
     }
 
     if (!stopExecution) {
-        void *func = ctx->GetFunctionCall(str_key);
+        void* func = ctx->GetFunctionCall(str_key);
         if (func) {
             ScriptingFunctionCallback cb = reinterpret_cast<ScriptingFunctionCallback>(func);
             cb(fptr);
         }
-    
+
         for (void* func : functionPostCalls) {
             reinterpret_cast<ScriptingFunctionCallback>(func)(fptr);
             if (fctx.ShouldStopExecution()) break;
@@ -80,7 +80,40 @@ JSValue JSFunctionCallback(JSContext *L, JSValue this_val, int argc, JSValue *ar
     return JS_UNDEFINED;
 }
 
-void AddScriptingFunction(EContext *ctx, std::string namespace_path, std::string function_name, ScriptingFunctionCallback callback)
+void DotNetFunctionCallback(EContext* ctx, CallContext& call_ctx)
+{
+    std::string str_key = call_ctx.GetNamespace() + " " + call_ctx.GetFunction();
+    FunctionContext fctx(str_key, ctx->GetKind(), ctx, &call_ctx, true);
+    FunctionContext* fptr = &fctx;
+
+    auto functionPreCalls = ctx->GetFunctionPreCalls(str_key);
+    auto functionPostCalls = ctx->GetFunctionPostCalls(str_key);
+    bool stopExecution = false;
+
+    for (void* func : functionPreCalls) {
+        reinterpret_cast<ScriptingFunctionCallback>(func)(fptr);
+        if (fctx.ShouldStopExecution())
+        {
+            stopExecution = true;
+            break;
+        }
+    }
+
+    if (!stopExecution) {
+        void* func = ctx->GetFunctionCall(str_key);
+        if (func) {
+            ScriptingFunctionCallback cb = reinterpret_cast<ScriptingFunctionCallback>(func);
+            cb(fptr);
+        }
+
+        for (void* func : functionPostCalls) {
+            reinterpret_cast<ScriptingFunctionCallback>(func)(fptr);
+            if (fctx.ShouldStopExecution()) break;
+        }
+    }
+}
+
+void AddScriptingFunction(EContext* ctx, std::string namespace_path, std::string function_name, ScriptingFunctionCallback callback)
 {
     if (ctx->GetKind() == ContextKinds::Lua)
     {
@@ -132,7 +165,7 @@ void AddScriptingFunction(EContext *ctx, std::string namespace_path, std::string
         }
 
         auto func_key = namespace_path + " " + function_name;
-        ctx->AddFunctionCall(func_key, reinterpret_cast<void *>(callback));
+        ctx->AddFunctionCall(func_key, reinterpret_cast<void*>(callback));
 
         lua_pushstring(L, func_key.c_str());
         lua_pushcclosure(L, LuaFunctionCallback, 1);
@@ -172,23 +205,27 @@ void AddScriptingFunction(EContext *ctx, std::string namespace_path, std::string
         }
 
         auto func_key = namespace_path + " " + function_name;
-        ctx->AddFunctionCall(func_key, reinterpret_cast<void *>(callback));
+        ctx->AddFunctionCall(func_key, reinterpret_cast<void*>(callback));
 
-        std::vector<JSValue> vals = {Stack<std::string>::pushJS(ctx, func_key)};
+        std::vector<JSValue> vals = { Stack<std::string>::pushJS(ctx, func_key) };
         JS_SetPropertyStr(L, ns, function_name.c_str(), JS_NewCFunctionData(L, JSFunctionCallback, 0, 1, 1, vals.data()));
 
         JS_FreeValue(L, gns);
     }
+    else if (ctx->GetKind() == ContextKinds::Dotnet) {
+        auto func_key = namespace_path + " " + function_name;
+        ctx->AddFunctionCall(func_key, reinterpret_cast<void*>(callback));
+    }
 }
 
-void AddScriptingFunctionPre(EContext *ctx, std::string namespace_path, std::string function_name, ScriptingFunctionCallback callback)
+void AddScriptingFunctionPre(EContext* ctx, std::string namespace_path, std::string function_name, ScriptingFunctionCallback callback)
 {
     auto func_key = namespace_path + " " + function_name;
-    ctx->AddFunctionPreCall(func_key, reinterpret_cast<void *>(callback));
+    ctx->AddFunctionPreCall(func_key, reinterpret_cast<void*>(callback));
 }
 
-void AddScriptingFunctionPost(EContext *ctx, std::string namespace_path, std::string function_name, ScriptingFunctionCallback callback)
+void AddScriptingFunctionPost(EContext* ctx, std::string namespace_path, std::string function_name, ScriptingFunctionCallback callback)
 {
     auto func_key = namespace_path + " " + function_name;
-    ctx->AddFunctionPostCall(func_key, reinterpret_cast<void *>(callback));
+    ctx->AddFunctionPostCall(func_key, reinterpret_cast<void*>(callback));
 }

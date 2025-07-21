@@ -2,7 +2,7 @@
 
 typedef void (*ScriptingFunctionCallback)(FunctionContext*);
 
-FunctionContext::FunctionContext(std::string function_key, ContextKinds kind, EContext *ctx, bool shouldSkipFirstArgument, bool skipCreatedUData, bool shouldSkipSecondArgument)
+FunctionContext::FunctionContext(std::string function_key, ContextKinds kind, EContext* ctx, bool shouldSkipFirstArgument, bool skipCreatedUData, bool shouldSkipSecondArgument)
 {
     m_function_key = function_key;
     m_kind = kind;
@@ -12,11 +12,11 @@ FunctionContext::FunctionContext(std::string function_key, ContextKinds kind, EC
     m_shouldSkipSecondArgument = shouldSkipSecondArgument;
 
     void* cb = ctx->GetFunctionCall("_G OnFunctionContextRegister");
-    if(!cb) return;
+    if (!cb) return;
     reinterpret_cast<ScriptingFunctionCallback>(cb)(this);
 }
 
-FunctionContext::FunctionContext(std::string function_key, ContextKinds kind, EContext *ctx, JSValue *vals, int argc)
+FunctionContext::FunctionContext(std::string function_key, ContextKinds kind, EContext* ctx, JSValue* vals, int argc)
 {
     m_function_key = function_key;
     m_kind = kind;
@@ -25,7 +25,21 @@ FunctionContext::FunctionContext(std::string function_key, ContextKinds kind, EC
     m_argc = argc;
 
     void* cb = ctx->GetFunctionCall("_G OnFunctionContextRegister");
-    if(!cb) return;
+    if (!cb) return;
+    reinterpret_cast<ScriptingFunctionCallback>(cb)(this);
+}
+
+FunctionContext::FunctionContext(std::string function_key, ContextKinds kind, EContext* ctx, CallContext* callctx, bool shouldSkipFirstArgument)
+{
+    m_function_key = function_key;
+    m_kind = kind;
+    m_ctx = ctx;
+    m_shouldSkipFirstArgument = shouldSkipFirstArgument;
+
+    m_vals = (JSValue*)callctx;
+
+    void* cb = ctx->GetFunctionCall("_G OnFunctionContextRegister");
+    if (!cb) return;
     reinterpret_cast<ScriptingFunctionCallback>(cb)(this);
 }
 
@@ -35,7 +49,7 @@ FunctionContext::~FunctionContext()
         luaL_unref(m_ctx->GetLuaState(), LUA_REGISTRYINDEX, returnRef);
 
     void* cb = m_ctx->GetFunctionCall("_G OnFunctionContextUnregister");
-    if(!cb) return;
+    if (!cb) return;
     reinterpret_cast<ScriptingFunctionCallback>(cb)(this);
 }
 
@@ -64,11 +78,15 @@ int FunctionContext::GetArgumentsCount()
     {
         return m_argc;
     }
+    else if (m_kind == ContextKinds::Dotnet)
+    {
+        return ((CallContext*)m_vals)->GetArgumentCount() - (int)m_shouldSkipFirstArgument;
+    }
     else
         return 0;
 }
 
-EContext *FunctionContext::GetPluginContext()
+EContext* FunctionContext::GetPluginContext()
 {
     return m_ctx;
 }

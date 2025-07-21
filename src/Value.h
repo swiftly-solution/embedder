@@ -475,6 +475,16 @@ struct Stack<EValue>
         return JS_DupValue((JSContext*)ctx->GetState(), value.pushJS());
     }
 
+    static EValue pushRawDotnet(EContext* ctx, void* context, EValue value)
+    {
+        return value;
+    }
+
+    static void pushDotnet(EContext* ctx, CallContext* context, EValue value, bool shouldReturn = false)
+    {
+
+    }
+
     static EValue getLua(EContext* ctx, int ref)
     {
         return EValue::fromLuaStack(ctx, ref);
@@ -485,12 +495,27 @@ struct Stack<EValue>
         return EValue::fromJSStack(ctx, value);
     }
 
+    static EValue getRawDotnet(EContext* ctx, CallContext* context, void* value)
+    {
+        return *(EValue*)value;
+    }
+
+    static EValue getDotnet(EContext* ctx, CallContext* context, bool shouldReturn = false)
+    {
+        return EValue(ctx);
+    }
+
     static bool isLuaInstance(EContext* ctx, int ref)
     {
         return true;
     }
 
     static bool isJSInstance(EContext* ctx, JSValue value)
+    {
+        return true;
+    }
+
+    static bool isDotnetInstance(EContext* ctx, CallContext* context, int index)
     {
         return true;
     }

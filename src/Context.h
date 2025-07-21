@@ -7,6 +7,7 @@
 
 #include <lua.hpp>
 #include <quickjs.h>
+#include "dotnet/invoker.h"
 #include <vector>
 
 #include "ContextKinds.h"
@@ -54,7 +55,6 @@ public:
     lua_State* GetLuaState();
     JSContext* GetJSState();
 
-    int RunCode(std::string code);
     int RunFile(std::string path);
 
     void PushValue(EValue* val);

@@ -7,6 +7,8 @@ enum class ContextKinds
     Lua = 1,
     // JavaScript Context
     JavaScript = 2,
+    // Dotnet Context
+    Dotnet = 3,
 };
 
 #endif

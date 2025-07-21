@@ -2,6 +2,7 @@
 #include "Exception.h"
 #include "Helpers.h"
 #include "CHelpers.h"
+#include "dotnet/host.h"
 
 #include <set>
 #include <filesystem>
@@ -83,6 +84,9 @@ EContext::EContext(ContextKinds kind)
 
         m_state = (void*)ctx;
     }
+    else if (kind == ContextKinds::Dotnet) {
+        InitializeDotNetAPI();
+    }
 
     EException::Enable(m_state, m_kind);
 }
@@ -109,6 +113,10 @@ EContext::~EContext()
         }
 
         JS_FreeRuntime(rt);
+    }
+    else if (m_kind == ContextKinds::Dotnet)
+    {
+        RemoveDotnetFile(this);
     }
 }
 
@@ -138,25 +146,9 @@ int64_t EContext::GetMemoryUsage()
         JS_ComputeMemoryUsage(JS_GetRuntime((JSContext*)m_state), &stats);
         return stats.memory_used_size;
     }
-    else
-        return 0;
-}
-
-int EContext::RunCode(std::string code)
-{
-    if (m_kind == ContextKinds::Lua)
+    else if (m_kind == ContextKinds::Dotnet)
     {
-        int cd = (luaL_dostring((lua_State*)m_state, code.c_str()));
-        if (cd != 0)
-            EException::Throw(EException(GetState(), GetKind(), cd));
-        return cd;
-    }
-    else if (m_kind == ContextKinds::JavaScript)
-    {
-        auto res = JS_Eval((JSContext*)m_state, code.c_str(), code.length(), "runcode.js", JS_EVAL_TYPE_GLOBAL);
-        bool isException = JS_IsException(res);
-        JS_FreeValue((JSContext*)m_state, res);
-        return (int)isException;
+        return GetDotnetRuntimeMemoryUsage(this);
     }
     else
         return 0;
@@ -194,6 +186,10 @@ int EContext::RunFile(std::string path)
         bool isException = JS_IsException(res);
         JS_FreeValue((JSContext*)m_state, res);
         return (int)isException;
+    }
+    else if (m_kind == ContextKinds::Dotnet)
+    {
+        return LoadDotnetFile(this, path);
     }
     else
         return 0;
