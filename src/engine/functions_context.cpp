@@ -81,6 +81,7 @@ int FunctionContext::GetArgumentsCount()
     }
     else if (m_kind == ContextKinds::Dotnet)
     {
+        if (m_vals == nullptr) return 0;
         return ((CallContext*)m_vals)->GetArgumentCount() - (int)m_shouldSkipFirstArgument - (int)m_skipCreatedUData;
     }
     else

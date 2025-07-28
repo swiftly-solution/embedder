@@ -18,6 +18,7 @@ typedef void(CORECLR_DELEGATE_CALLTYPE* remove_file_fn)(void* context);
 typedef void(CORECLR_DELEGATE_CALLTYPE* interpret_as_string_fn)(void* object, int type, const char* out, int len);
 typedef void* (CORECLR_DELEGATE_CALLTYPE* allocate_pointer_fn)(int size, int count);
 typedef uint64_t(CORECLR_DELEGATE_CALLTYPE* get_plugin_memory_fn)(void* context);
+typedef void(CORECLR_DELEGATE_CALLTYPE* execute_function_fn)(void* ctx, void* pctx);
 
 bool initialized = false;
 void* hostfxr_lib = nullptr;
@@ -190,4 +191,40 @@ uint64_t GetDotnetRuntimeMemoryUsage(void* context)
     }
 
     return getMemory(context);
+}
+
+void DotnetExecuteFunction(void* ctx, void* pctx)
+{
+    if (!initialized) return;
+
+    static execute_function_fn execFunction = nullptr;
+    if (execFunction == nullptr) {
+        int returnCode = _load_assembly_and_get_function_pointer(
+                (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
+                STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("ExecuteFunction"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&execFunction
+        );
+
+        if (returnCode != 0 || execFunction == nullptr) return;
+    }
+
+    return execFunction(ctx, pctx);
+}
+
+void DotnetUpdateGlobalStateCleanupLock(bool state)
+{
+    if (!initialized) return;
+
+    typedef void(CORECLR_DELEGATE_CALLTYPE* state_fn)(int state);
+    static state_fn set_state = nullptr;
+
+    if (set_state == nullptr) {
+        int returnCode = _load_assembly_and_get_function_pointer(
+            (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
+            STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("UpdateGlobalStateCleanupLock"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&set_state
+        );
+
+        if (returnCode != 0 || (void*)set_state == nullptr) return;
+    }
+
+    set_state((int)state);
 }

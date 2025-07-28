@@ -1321,6 +1321,15 @@ struct Stack<std::vector<T>>
             for (int i = 0; i < value.size(); i++)
                 arrayPtr[i] = Stack<T>::pushRawDotnet(ctx, context, value[i]);
         }
+        else if constexpr (std::is_same<std::any, T>::value) {
+            arrayData->elements = (void**)DotnetAllocateContextPointer(sizeof(void*), value.size());
+            arrayData->length = value.size();
+            arrayData->type = typesMap[typeid(void*)];
+
+            void** arrayPtr = (void**)arrayData->elements;
+            for (int i = 0; i < value.size(); i++)
+                arrayPtr[i] = Stack<T>::pushRawDotnet(ctx, context, value[i]);
+        }
         else {
             arrayData->elements = (void**)DotnetAllocateContextPointer(sizeof(T), value.size());
             arrayData->length = value.size();
@@ -1395,8 +1404,14 @@ struct Stack<std::vector<T>>
         ArrayData* arrayDatas = *(ArrayData**)value;
         std::vector<T> v;
 
-        for (int i = 0; i < arrayDatas->length; i++)
-            v.push_back(Stack<T>::getRawDotnet(ctx, context, &(arrayDatas->elements[i])));
+        for (int i = 0; i < arrayDatas->length; i++) {
+            if constexpr (std::is_same<T, std::any>::value) {
+                v.push_back(Stack<T>::getRawDotnet(ctx, context, &(arrayDatas->elements[i]), arrayDatas->type));
+            }
+            else {
+                v.push_back(Stack<T>::getRawDotnet(ctx, context, &(arrayDatas->elements[i])));
+            }
+        }
 
         return v;
     }
@@ -2063,15 +2078,17 @@ struct Stack<ClassData*>
 
     static ClassData* pushRawDotnet(EContext* ctx, CallContext* context, ClassData* value)
     {
+        if (ShouldDeleteOnGC(value)) {
+            value = new ClassData(*value);
+            MarkDeleteOnGC(value);
+        }
+
         return value;
     }
 
     static void pushDotnet(EContext* ctx, CallContext* context, ClassData* value, bool shouldReturn = false)
     {
-        if (ShouldDeleteOnGC(value)) {
-            value = new ClassData(*value);
-            MarkDeleteOnGC(value);
-        }
+        value = pushRawDotnet(ctx, context, value);
 
         if (shouldReturn) {
             context->SetReturnType(typesMap[typeid(void*)]);

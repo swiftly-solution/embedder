@@ -9,6 +9,12 @@
 #include "Helpers.h"
 #include "Stack.h"
 
+class Vector;
+class Vector2D;
+class Vector4D;
+class Color;
+class QAngle;
+
 struct StackCallFunc
 {
     JSValue* args;
@@ -22,12 +28,15 @@ private:
     EContext* m_ctx;
     JSValue m_val = JS_NULL;
     bool nofree = false;
+    void* m_ptr = nullptr;
+    int m_ptrtype = 0;
 
     void swap(EValue& other)
     {
         std::swap(m_ctx, other.m_ctx);
         std::swap(m_ref, other.m_ref);
         std::swap(m_val, other.m_val);
+        std::swap(m_ptr, other.m_ptr);
     }
 
 public:
@@ -41,6 +50,7 @@ public:
         m_ctx->PushValue(this);
         if (ctx->GetKind() == ContextKinds::Lua) m_ref = LUA_REFNIL;
         else if (ctx->GetKind() == ContextKinds::JavaScript) m_val = JS_NULL;
+        else if (ctx->GetKind() == ContextKinds::Dotnet) m_ptr = nullptr;
     }
 
     template<class T>
@@ -54,6 +64,24 @@ public:
         }
         else if (ctx->GetKind() == ContextKinds::JavaScript) {
             m_val = Stack<T>::pushJS(ctx, value);
+        }
+        else if (ctx->GetKind() == ContextKinds::Dotnet) {
+            if constexpr (
+                is_map<T>::value || is_vector<T>::value || std::is_same<std::string, T>::value || std::is_same<ClassData*, T>::value || std::is_same<Vector, T>::value ||
+                std::is_same<Vector2D, T>::value || std::is_same<Vector4D, T>::value || std::is_same<Color, T>::value || std::is_same<QAngle, T>::value
+            ) {
+                void* val = (void*)Stack<T>::pushRawDotnet(ctx, nullptr, value);
+                m_ptr = val;
+            }
+            else {
+                T val = Stack<T>::pushRawDotnet(ctx, nullptr, value);
+                m_ptr = *(void**)&val;
+            }
+
+            if constexpr (is_map<T>::value) m_ptrtype = 16;
+            else if constexpr (is_vector<T>::value) m_ptrtype = 15;
+            else if constexpr (std::is_same<std::string, T>::value) m_ptrtype = typesMap[typeid(std::string)];
+            else m_ptrtype = typesMap[typeid(T)];
         }
     }
 
@@ -79,6 +107,16 @@ public:
         }
     }
 
+    EValue(EContext* ctx, void* value, int kind)
+    {
+        m_ctx = ctx;
+        m_ctx->PushValue(this);
+        if (ctx->GetKind() == ContextKinds::Dotnet) {
+            m_ptr = value;
+            m_ptrtype = kind;
+        }
+    }
+
     ~EValue()
     {
         if (nofree) return;
@@ -100,6 +138,7 @@ public:
         m_ctx->PushValue(this);
         m_ref = other.createRef();
         m_val = other.createValue();
+        m_ptr = other.m_ptr;
     }
 
     EValue(const EValue& other) {
@@ -109,6 +148,7 @@ public:
         m_ctx->PushValue(this);
         m_ref = nonConstOther.createRef();
         m_val = nonConstOther.createValue();
+        m_ptr = nonConstOther.m_ptr;
     }
 
     int createRef() {
@@ -120,6 +160,10 @@ public:
     JSValue createValue() {
         if (m_ctx->GetKind() != ContextKinds::JavaScript) return JS_NULL;
         return JS_DupValue((JSContext*)m_ctx->GetState(), m_val);
+    }
+
+    void* getPointer() {
+        return m_ptr;
     }
 
     EValue& operator=(EValue& rhs)
@@ -147,6 +191,10 @@ public:
         return m_val;
     }
 
+    void* pushDotnet() {
+        return m_ptr;
+    }
+
     template<class T>
     bool isInstance()
     {
@@ -158,6 +206,12 @@ public:
         }
         else if (m_ctx->GetKind() == ContextKinds::JavaScript) {
             return Stack<T>::isJSInstance(m_ctx, m_val);
+        }
+        else if (m_ctx->GetKind() == ContextKinds::Dotnet) {
+            if constexpr (is_map<T>::value) return m_ptrtype == 16;
+            else if constexpr (is_vector<T>::value) return m_ptrtype == 15;
+            else if constexpr (std::is_same<std::string, T>::value) return m_ptrtype == typesMap[typeid(std::string)];
+            else return m_ptrtype == typesMap[typeid(T)];
         }
         else return false;
     }
@@ -173,6 +227,9 @@ public:
         }
         else if (m_ctx->GetKind() == ContextKinds::JavaScript) {
             return Stack<T>::getJS(m_ctx, m_val);
+        }
+        else if (m_ctx->GetKind() == ContextKinds::Dotnet) {
+            return Stack<T>::getRawDotnet(m_ctx, nullptr, (void*)&m_ptr);
         }
         else {
             return *(T*)0;
@@ -205,91 +262,43 @@ public:
     bool isNull() {
         if (m_ctx->GetKind() == ContextKinds::Lua) return getLuaType() == LUA_TNIL;
         else if (m_ctx->GetKind() == ContextKinds::JavaScript) return JS_IsNull(m_val);
+        else if (m_ctx->GetKind() == ContextKinds::Dotnet) return m_ptr == nullptr;
         else return false;
     }
 
     bool isBool() {
         if (m_ctx->GetKind() == ContextKinds::Lua) return getLuaType() == LUA_TBOOLEAN;
         else if (m_ctx->GetKind() == ContextKinds::JavaScript) return JS_IsBool(m_val);
+        else if (m_ctx->GetKind() == ContextKinds::Dotnet) return m_ptrtype == typesMap[typeid(bool)];
         else return false;
     }
 
     bool isNumber() {
         if (m_ctx->GetKind() == ContextKinds::Lua) return getLuaType() == LUA_TNUMBER;
         else if (m_ctx->GetKind() == ContextKinds::JavaScript) return JS_IsNumber(m_val);
+        else if (m_ctx->GetKind() == ContextKinds::Dotnet) return m_ptrtype >= 2 && m_ptrtype <= 11;
         else return false;
     }
 
     bool isString() {
         if (m_ctx->GetKind() == ContextKinds::Lua) return getLuaType() == LUA_TSTRING;
         else if (m_ctx->GetKind() == ContextKinds::JavaScript) return JS_IsString(m_val);
+        else if (m_ctx->GetKind() == ContextKinds::Dotnet) return m_ptrtype == typesMap[typeid(std::string)];
         else return false;
     }
 
     bool isTable() {
         if (m_ctx->GetKind() == ContextKinds::Lua) return getLuaType() == LUA_TTABLE;
         else if (m_ctx->GetKind() == ContextKinds::JavaScript) return JS_IsArray(m_val) || JS_IsObject(m_val);
+        else if (m_ctx->GetKind() == ContextKinds::Dotnet) return m_ptrtype == 15 || m_ptrtype == 16;
         else return false;
     }
 
     bool isFunction() {
         if (m_ctx->GetKind() == ContextKinds::Lua) return getLuaType() == LUA_TFUNCTION;
         else if (m_ctx->GetKind() == ContextKinds::JavaScript) return JS_IsFunction((JSContext*)m_ctx->GetState(), m_val);
+        else if (m_ctx->GetKind() == ContextKinds::Dotnet) return m_ptrtype == 17;
         else return false;
-    }
-
-    template<class T>
-    EValue operator[](T value)
-    {
-        if (!isTable()) return *this;
-
-        if (m_ctx->GetKind() == ContextKinds::Lua) {
-            lua_State* L = (lua_State*)m_ctx->GetState();
-            lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
-            Stack<T>::pushLua(m_ctx, value);
-            lua_rawget(L, lua_absindex(L, -2));
-            return EValue(m_ctx, 0, true);
-        }
-        else if (m_ctx->GetKind() == ContextKinds::JavaScript) {
-            JSContext* ctx = (JSContext*)m_ctx->GetState();
-
-            if constexpr (std::is_same<T, std::string>::value) {
-                std::string str = value;
-                JSValue vl = JS_GetPropertyStr(ctx, m_val, str.c_str());
-                return EValue(m_ctx, vl);
-            }
-            else if constexpr (std::is_same<T, const char*>::value) {
-                JSValue vl = JS_GetPropertyStr(ctx, m_val, (const char*)value);
-                return EValue(m_ctx, vl);
-            }
-            else if constexpr (std::is_same<T, int8_t>::value || std::is_same<T, int16_t>::value || std::is_same<T, int32_t>::value || std::is_same<T, int64_t>::value || std::is_same<T, uint8_t>::value || std::is_same<T, uint16_t>::value || std::is_same<T, uint32_t>::value || std::is_same<T, uint64_t>::value) {
-                JSValue vl = JS_GetPropertyInt64(ctx, m_val, (int64_t)value);
-                return EValue(m_ctx, vl);
-            }
-
-            return EValue(m_ctx);
-        }
-        else return *this;
-    }
-
-    template<class T>
-    EValue setProperty(std::string key, T value)
-    {
-        if (!isTable()) return *this;
-
-        if (m_ctx->GetKind() == ContextKinds::Lua) {
-            lua_State* L = (lua_State*)m_ctx->GetState();
-            lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
-            Stack<T>::pushLua(m_ctx, value);
-            rawsetfield(L, -2, key.c_str());
-            lua_pop(L, 1);
-        }
-        else if (m_ctx->GetKind() == ContextKinds::JavaScript) {
-            JSContext* ctx = (JSContext*)m_ctx->GetState();
-            JS_SetPropertyStr(ctx, m_val, key.c_str(), Stack<T>::pushJS(m_ctx, value));
-        }
-
-        return *this;
     }
 
     std::string tostring()
@@ -315,6 +324,13 @@ public:
             std::string out(value);
             JS_FreeCString(L, value);
             return out;
+        }
+        else if (m_ctx->GetKind() == ContextKinds::Dotnet) {
+            static char out[8192];
+            memset(out, 0, sizeof(out));
+            InterpretAsString((void*)&m_ptr, m_ptrtype, out, sizeof(out));
+
+            return std::string(out);
         }
         else return "";
     }
@@ -377,7 +393,58 @@ public:
             JS_FreeValue(state, result);
             return returnVal;
         }
+        else if (m_ctx->GetKind() == ContextKinds::Dotnet) {
+            CallData data;
+            data.args_count = 0;
+
+            CallContext ctx(data);
+
+            pushDotnetArguments(&ctx, std::forward<Params>(params)...);
+
+            data.function_str = (const char*)m_ptr;
+            data.function_len = strlen((const char*)m_ptr);
+
+            DotnetUpdateGlobalStateCleanupLock(true);
+            DotnetExecuteFunction(&data, m_ctx);
+            DotnetUpdateGlobalStateCleanupLock(false);
+
+            return EValue(m_ctx, ctx.GetResultPtr(), ctx.GetReturnType());
+        }
         else return EValue(m_ctx);
+    }
+
+    template<class T>
+    EValue operator[](T value)
+    {
+        if (!isTable()) return *this;
+
+        if (m_ctx->GetKind() == ContextKinds::Lua) {
+            lua_State* L = (lua_State*)m_ctx->GetState();
+            lua_rawgeti(L, LUA_REGISTRYINDEX, m_ref);
+            Stack<T>::pushLua(m_ctx, value);
+            lua_rawget(L, lua_absindex(L, -2));
+            return EValue(m_ctx, 0, true);
+        }
+        else if (m_ctx->GetKind() == ContextKinds::JavaScript) {
+            JSContext* ctx = (JSContext*)m_ctx->GetState();
+
+            if constexpr (std::is_same<T, std::string>::value) {
+                std::string str = value;
+                JSValue vl = JS_GetPropertyStr(ctx, m_val, str.c_str());
+                return EValue(m_ctx, vl);
+            }
+            else if constexpr (std::is_same<T, const char*>::value) {
+                JSValue vl = JS_GetPropertyStr(ctx, m_val, (const char*)value);
+                return EValue(m_ctx, vl);
+            }
+            else if constexpr (std::is_same<T, int8_t>::value || std::is_same<T, int16_t>::value || std::is_same<T, int32_t>::value || std::is_same<T, int64_t>::value || std::is_same<T, uint8_t>::value || std::is_same<T, uint16_t>::value || std::is_same<T, uint32_t>::value || std::is_same<T, uint64_t>::value) {
+                JSValue vl = JS_GetPropertyInt64(ctx, m_val, (int64_t)value);
+                return EValue(m_ctx, vl);
+            }
+
+            return EValue(m_ctx);
+        }
+        else return *this;
     }
 
     static EValue getGlobal(EContext* ctx, std::string global_name)
@@ -459,6 +526,20 @@ private:
         data.items++;
 
         pushJSArguments(data, std::forward<Params>(params)...);
+    }
+
+    void pushDotnetArguments(CallContext* ctx) {}
+
+    template<typename T, typename... Params>
+    void pushDotnetArguments(CallContext* ctx, T& param, Params&&... params)
+    {
+        if constexpr (is_map<T>::value || is_vector<T>::value || std::is_same<T, std::any>::value) {
+            ctx->PushArgument<void*>(Stack<T>::pushRawDotnet(m_ctx, ctx, param));
+        }
+        else {
+            ctx->PushArgument(param);
+        }
+        pushDotnetArguments(ctx, std::forward<Params>(params)...);
     }
 };
 

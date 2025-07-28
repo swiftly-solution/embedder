@@ -375,6 +375,10 @@ EValue CreateScriptingClassInstance(EContext* context, std::string class_name, s
         JS_FreeValue(L, ret);
         return v;
     }
+    else if (context->GetKind() == ContextKinds::Dotnet) {
+        auto data = new ClassData(classdata, class_name, context);
+        return EValue(context, data, 18);
+    }
     else
         return EValue(context);
 }

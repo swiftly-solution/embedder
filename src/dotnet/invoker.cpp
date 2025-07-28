@@ -1,9 +1,13 @@
 #include "invoker.h"
+#include "../Helpers.h"
+#include "../CHelpers.h"
 
 class EContext;
+class ClassData;
 
 std::map<std::type_index, int> typesMap = {
     { typeid(void*), 1 },
+    { typeid(ClassData*), 1 },
     { typeid(bool), 2 },
     { typeid(uint8_t), 3 },
     { typeid(int8_t), 4 },
@@ -31,7 +35,9 @@ void Dotnet_InvokeNative(CallData& context)
     else if (context.call_kind == (int)CallKind::ClassMember) return DotNetMemberCallback(ctx.GetArgument<EContext*>(0), ctx);
 }
 
+std::set<void*> droppedValues;
+
 void Dotnet_ClassDataFinalizer(void* plugin_context, void* instance)
 {
-    // @todo: .NET Implementation
+    CHelpers::DotNetGCFunction((EContext*)plugin_context, (ClassData*)instance, &droppedValues);
 }

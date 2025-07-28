@@ -207,15 +207,6 @@ public:
         m_cdata->args_count++;
     }
 
-    inline void PushString(const char* value)
-    {
-        auto functionData = (uint64_t*)m_args_data;
-
-        *reinterpret_cast<const char**>(&functionData[m_args_count]) = value;
-        m_args_count++;
-        m_cdata->args_count++;
-    }
-
     template <typename T> inline void SetResult(T value)
     {
         auto functionData = (uint64_t*)m_return_value;

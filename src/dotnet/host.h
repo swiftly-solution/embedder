@@ -17,5 +17,7 @@ void RemoveDotnetFile(EContext* ctx);
 void InterpretAsString(void* obj, int type, const char* out, int len);
 void* DotnetAllocateContextPointer(int size, int count);
 uint64_t GetDotnetRuntimeMemoryUsage(void* context);
+void DotnetExecuteFunction(void* ctx, void* pctx);
+void DotnetUpdateGlobalStateCleanupLock(bool state);
 
 #endif

@@ -6,6 +6,7 @@
 #include <cassert>
 #include <string>
 #include <iostream>
+#include <vector>
 
 #include "GarbageCollector.h"
 #include "engine/classes.h"
@@ -179,6 +180,15 @@ public:
         }
 
         JS_SetOpaque(val, nullptr);
+    }
+
+    static void DotNetGCFunction(EContext* ctx, ClassData* data, std::set<void*>* droppedValues)
+    {
+        if (data && CheckAndPopDeleteOnGC(data)) {
+            if (droppedValues->find(data) != droppedValues->end()) return;
+            droppedValues->insert(data);
+            delete data;
+        }
     }
 };
 
