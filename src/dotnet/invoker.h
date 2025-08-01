@@ -81,6 +81,9 @@ struct CallData
     const char* function_str;
     int function_len;
 
+    const char* dbginfo_str;
+    int dbginfo_len;
+
     int call_kind;
 };
 
@@ -135,6 +138,12 @@ public:
         m_call_kind = (CallKind)data.call_kind;
 
         m_cdata = &data;
+    }
+
+    inline std::string GetDebugInfo()
+    {
+        if (!m_cdata->dbginfo_str) return "";
+        else return m_cdata->dbginfo_str;
     }
 
     inline int GetArgumentType(int index)

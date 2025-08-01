@@ -50,6 +50,18 @@ public:
         return returnVal;
     }
 
+    std::string GetDebugInfo()
+    {
+        if (m_kind == ContextKinds::Dotnet)
+        {
+            return ((CallContext*)m_vals)->GetDebugInfo();
+        }
+        else
+        {
+            return "";
+        }
+    }
+
     template <class T>
     T GetArgument(int index)
     {
