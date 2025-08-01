@@ -1330,6 +1330,15 @@ struct Stack<std::vector<T>>
             for (int i = 0; i < value.size(); i++)
                 arrayPtr[i] = Stack<T>::pushRawDotnet(ctx, context, value[i]);
         }
+        else if constexpr (std::is_same<std::string, T>::value) {
+            arrayData->elements = (void**)DotnetAllocateContextPointer(sizeof(char*), value.size());
+            arrayData->length = value.size();
+            arrayData->type = typesMap[typeid(T)];
+
+            char** arrayPtr = (char**)arrayData->elements;
+            for (int i = 0; i < value.size(); i++)
+                arrayPtr[i] = Stack<T>::pushRawDotnet(ctx, context, value[i]);
+        }
         else {
             arrayData->elements = (void**)DotnetAllocateContextPointer(sizeof(T), value.size());
             arrayData->length = value.size();

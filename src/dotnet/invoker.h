@@ -45,7 +45,8 @@ enum class CallKind
     None,
     Function,
     ClassMember,
-    ClassFunction
+    ClassFunction,
+    CoreClassFunction
 };
 
 struct MapData

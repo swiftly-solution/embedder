@@ -563,7 +563,16 @@ struct Stack<EValue>
 
     static void pushDotnet(EContext* ctx, CallContext* context, EValue value, bool shouldReturn = false)
     {
+        void* val = value.getPointer();
 
+        if (shouldReturn) {
+            context->SetReturnType(typesMap[typeid(void*)]);
+            context->SetResult(val);
+        }
+        else {
+            context->SetArgumentType(context->GetArgumentCount(), typesMap[typeid(void*)]);
+            context->PushArgument(val);
+        }
     }
 
     static EValue getLua(EContext* ctx, int ref)

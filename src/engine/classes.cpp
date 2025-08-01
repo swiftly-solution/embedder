@@ -206,11 +206,11 @@ JSValue JSClassCallback(JSContext* L, JSValue this_val, int argc, JSValue* argv,
     else return JS_UNDEFINED;
 }
 
-void DotnetClassCallback(EContext* ctx, CallContext& call_ctx)
+void DotnetClassCallback(EContext* ctx, CallContext& call_ctx, bool bypassClassCheck)
 {
     std::string str_key = call_ctx.GetNamespace() + " " + call_ctx.GetFunction();
     auto splits = str_split(str_key, " ");
-    FunctionContext fctx(str_key, ctx->GetKind(), ctx, &call_ctx, true, splits[0] == splits[1]);
+    FunctionContext fctx(str_key, ctx->GetKind(), ctx, &call_ctx, true, bypassClassCheck ? true : splits[0] == splits[1]);
     FunctionContext* fptr = &fctx;
 
     ClassData* data = nullptr;
