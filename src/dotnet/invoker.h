@@ -202,7 +202,6 @@ public:
             std::string val = (std::string)value;
             char* string_buf = (char*)DotnetAllocateContextPointer(sizeof(char), val.size() + 1);
             strcpy(string_buf, val.c_str());
-
             *reinterpret_cast<char**>(&functionData[m_args_count]) = string_buf;
         }
         else {
@@ -220,12 +219,13 @@ public:
     template <typename T> inline void SetResult(T value)
     {
         auto functionData = (uint64_t*)m_return_value;
+        m_has_return = 1;
+        m_cdata->has_return = 1;
 
         if constexpr (std::is_same<T, std::string>::value) {
             std::string val = (std::string)value;
             char* string_buf = (char*)DotnetAllocateContextPointer(sizeof(char), val.size() + 1);
             strcpy(string_buf, val.c_str());
-
             *reinterpret_cast<char**>(&functionData[0]) = string_buf;
             return;
         }
@@ -237,9 +237,6 @@ public:
 
             *reinterpret_cast<T*>(&functionData[0]) = value;
         }
-
-        m_has_return = 1;
-        m_cdata->has_return = 1;
     }
 
     template <typename T> inline T GetResult()

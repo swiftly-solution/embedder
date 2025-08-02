@@ -1245,13 +1245,20 @@ struct Stack<std::string>
 
     static std::string getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
-        return *(char**)value;
+        char* out = *(char**)value;
+        if (out == nullptr) return "(nil)";
+        else return out;
     }
 
     static std::string getDotnet(EContext* ctx, CallContext* context, int index)
     {
-        if (index == -1) return context->GetResult<char*>();
-        else return context->GetArgument<char*>(index);
+        char* out = nullptr;
+
+        if (index == -1) out = context->GetResult<char*>();
+        else out = context->GetArgument<char*>(index);
+
+        if (out == nullptr) return "Empty String";
+        else return out;
     }
 
     static bool isLuaInstance(EContext* ctx, int ref)
@@ -1412,6 +1419,7 @@ struct Stack<std::vector<T>>
     {
         ArrayData* arrayDatas = *(ArrayData**)value;
         std::vector<T> v;
+        if (arrayDatas == nullptr) return v;
 
         for (int i = 0; i < arrayDatas->length; i++) {
             if constexpr (std::is_same<T, std::any>::value) {
@@ -1624,6 +1632,7 @@ struct Stack<std::map<K, V>>
     {
         MapData* mapDatas = *(MapData**)value;
         M v;
+        if (mapDatas == nullptr) return v;
 
         for (int i = 0; i < mapDatas->length; i++)
             v.emplace(Stack<K>::getRawDotnet(ctx, context, &(mapDatas->keys[i])), Stack<V>::getRawDotnet(ctx, context, &(mapDatas->values[i])));
@@ -1821,6 +1830,7 @@ struct Stack<std::unordered_map<K, V>>
     {
         MapData* mapDatas = *(MapData**)value;
         M v;
+        if (mapDatas == nullptr) return v;
 
         for (int i = 0; i < mapDatas->length; i++)
             v.emplace(Stack<K>::getRawDotnet(ctx, context, &(mapDatas->keys[i])), Stack<V>::getRawDotnet(ctx, context, &(mapDatas->values[i])));
