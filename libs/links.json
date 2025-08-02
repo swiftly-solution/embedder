@@ -7,7 +7,7 @@
         ],
         "linux": [
             "lua/liblua.so",
-            "js/libqjs.so.0",
+            "js/libqjs.so",
             "dotnet/linuxsteamrt64/libnethost.so"
         ]
     },
