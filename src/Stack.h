@@ -1129,7 +1129,7 @@ struct Stack<char const*>
     static char* pushRawDotnet(EContext* ctx, CallContext* context, std::string value)
     {
         char* string_buf = (char*)DotnetAllocateContextPointer(sizeof(char), value.size() + 1);
-        strcpy(string_buf, value.c_str());
+        memcpy(string_buf, value.c_str(), value.size() + 1);
         return string_buf;
     }
 
@@ -1200,11 +1200,11 @@ struct Stack<std::string>
     static char* pushRawDotnet(EContext* ctx, CallContext* context, std::string value)
     {
         char* string_buf = (char*)DotnetAllocateContextPointer(sizeof(char), value.size() + 1);
-        strcpy(string_buf, value.c_str());
+        memcpy(string_buf, value.c_str(), value.size() + 1);
         return string_buf;
     }
 
-    static void pushDotnet(EContext* ctx, CallContext* context, std::string value, bool shouldReturn = false)
+    static void pushDotnet(EContext* ctx, CallContext* context, std::string& value, bool shouldReturn = false)
     {
         if (shouldReturn) {
             context->SetReturnType(typesMap[typeid(std::string)]);

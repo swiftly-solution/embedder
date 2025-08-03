@@ -199,9 +199,8 @@ public:
         auto functionData = (uint64_t*)m_args_data;
 
         if constexpr (std::is_same<T, std::string>::value) {
-            std::string val = (std::string)value;
-            char* string_buf = (char*)DotnetAllocateContextPointer(sizeof(char), val.size() + 1);
-            strcpy(string_buf, val.c_str());
+            char* string_buf = (char*)DotnetAllocateContextPointer(sizeof(char), value.size() + 1);
+            memcpy(string_buf, value.c_str(), value.size() + 1);
             *reinterpret_cast<char**>(&functionData[m_args_count]) = string_buf;
         }
         else {
@@ -223,9 +222,8 @@ public:
         m_cdata->has_return = 1;
 
         if constexpr (std::is_same<T, std::string>::value) {
-            std::string val = (std::string)value;
-            char* string_buf = (char*)DotnetAllocateContextPointer(sizeof(char), val.size() + 1);
-            strcpy(string_buf, val.c_str());
+            char* string_buf = (char*)DotnetAllocateContextPointer(sizeof(char), value.size() + 1);
+            memcpy(string_buf, value.c_str(), value.size() + 1);
             *reinterpret_cast<char**>(&functionData[0]) = string_buf;
             return;
         }
