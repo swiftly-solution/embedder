@@ -23,7 +23,11 @@ typedef void(CORECLR_DELEGATE_CALLTYPE* execute_function_fn)(void* ctx, void* pc
 bool initialized = false;
 void* hostfxr_lib = nullptr;
 
+#ifdef _WIN32
+char_t dotnet_path[1024];
+#else
 char dotnet_path[1024];
+#endif
 
 #ifdef _WIN32
 std::wstring widenedOriginPath;
@@ -39,7 +43,7 @@ bool InitializeHostFXR(std::string origin_path) {
     widenedOriginPath = origin_path;
 #endif
 
-    hostfxr_lib = load_library(WIN_LIN("hostfxr.dll", "libhostfxr.so"));
+    hostfxr_lib = load_library(WIN_LIN(L"hostfxr.dll", "libhostfxr.so"));
     if (!hostfxr_lib) return false;
 
     _initialize_for_runtime_config = (hostfxr_initialize_for_runtime_config_fn)get_export(hostfxr_lib, "hostfxr_initialize_for_runtime_config");
@@ -56,7 +60,11 @@ bool InitializeHostFXR(std::string origin_path) {
 
     hostfxr_initialize_parameters params;
     params.size = sizeof(hostfxr_initialize_parameters);
-    std::string path = widenedOriginPath + WIN_LIN("addons\\swiftly\\bin\\managed\\dotnet", "addons/swiftly/bin/managed/dotnet");
+#ifdef _WIN32
+    std::wstring path = widenedOriginPath + L"addons\\swiftly\\bin\\managed\\dotnet";
+#else
+    std::string path = widenedOriginPath + "addons/swiftly/bin/managed/dotnet";
+#endif
 
     memcpy(dotnet_path, path.c_str(), path.size() >= 1024 ? 1023 : path.size());
 
@@ -68,7 +76,7 @@ bool InitializeHostFXR(std::string origin_path) {
         return false;
     }
 
-    _set_runtime_prop_value(fxrcxt, WIN_LIN(L"APP_CONTEXT_BASE_DIRECTORY", "APP_CONTEXT_BASE_DIRECTORY"), WIN_LIN(StringWide(path).c_str(), dotnet_path));
+    _set_runtime_prop_value(fxrcxt, WIN_LIN(L"APP_CONTEXT_BASE_DIRECTORY", "APP_CONTEXT_BASE_DIRECTORY"), WIN_LIN(path.c_str(), dotnet_path));
 
     returnCode = _get_runtime_delegate(fxrcxt, hdt_load_assembly_and_get_function_pointer, (void**)&_load_assembly_and_get_function_pointer);
     if (returnCode != 0 || (void*)_load_assembly_and_get_function_pointer == nullptr) {
@@ -115,8 +123,8 @@ int LoadDotnetFile(EContext* ctx, std::string filePath)
     static load_file_fn loadFile = nullptr;
     if (loadFile == nullptr) {
         int returnCode = _load_assembly_and_get_function_pointer(
-                (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
-                STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("LoadFile"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&loadFile
+            (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
+            STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("LoadFile"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&loadFile
         );
 
         if (returnCode != 0 || loadFile == nullptr) return 1;
@@ -132,8 +140,8 @@ void InterpretAsString(void* obj, int type, const char* out, int len)
     static interpret_as_string_fn interpretAsString = nullptr;
     if (interpretAsString == nullptr) {
         int returnCode = _load_assembly_and_get_function_pointer(
-                (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
-                STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("InterpretAsString"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&interpretAsString
+            (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
+            STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("InterpretAsString"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&interpretAsString
         );
 
         if (returnCode != 0 || interpretAsString == nullptr) return;
@@ -149,8 +157,8 @@ void RemoveDotnetFile(EContext* ctx)
     static remove_file_fn removeFile = nullptr;
     if (removeFile == nullptr) {
         int returnCode = _load_assembly_and_get_function_pointer(
-                (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
-                STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("RemoveFile"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&removeFile
+            (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
+            STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("RemoveFile"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&removeFile
         );
 
         if (returnCode != 0 || removeFile == nullptr) return;
@@ -166,8 +174,8 @@ void* DotnetAllocateContextPointer(int size, int count)
     static allocate_pointer_fn allocatePointer = nullptr;
     if (allocatePointer == nullptr) {
         int returnCode = _load_assembly_and_get_function_pointer(
-                (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
-                STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("AllocateContextPointer"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&allocatePointer
+            (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
+            STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("AllocateContextPointer"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&allocatePointer
         );
 
         if (returnCode != 0 || allocatePointer == nullptr) return nullptr;
@@ -183,8 +191,8 @@ uint64_t GetDotnetRuntimeMemoryUsage(void* context)
     static get_plugin_memory_fn getMemory = nullptr;
     if (getMemory == nullptr) {
         int returnCode = _load_assembly_and_get_function_pointer(
-                (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
-                STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("GetPluginMemoryUsage"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&getMemory
+            (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
+            STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("GetPluginMemoryUsage"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&getMemory
         );
 
         if (returnCode != 0 || getMemory == nullptr) return 0;
@@ -200,8 +208,8 @@ void DotnetExecuteFunction(void* ctx, void* pctx)
     static execute_function_fn execFunction = nullptr;
     if (execFunction == nullptr) {
         int returnCode = _load_assembly_and_get_function_pointer(
-                (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
-                STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("ExecuteFunction"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&execFunction
+            (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
+            STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("ExecuteFunction"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&execFunction
         );
 
         if (returnCode != 0 || execFunction == nullptr) return;
