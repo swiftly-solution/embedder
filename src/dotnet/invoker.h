@@ -167,6 +167,11 @@ public:
         m_return_type = value;
     }
 
+    inline bool HasReturn()
+    {
+        return m_has_return;
+    }
+
     template <typename T> inline T GetArgument(int index)
     {
         auto functionData = (uint64_t*)m_args_data;

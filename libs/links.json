@@ -2,32 +2,23 @@
     "libraries": {
         "windows": [
             "lua/lua.lib",
-            "js/qjs.lib",
-            "dotnet/win64/nethost.lib"
+            "dotnet/win64/libnethost.lib"
         ],
         "linux": [
-            "lua/liblua.so",
-            "js/libqjs.so",
-            "dotnet/linuxsteamrt64/libnethost.so"
+            "lua/liblua.a",
+            "dotnet/linuxsteamrt64/libnethost.a"
         ]
     },
     "shared": {
         "windows": [
-            "lua/lua.dll",
-            "js/qjs.dll",
-            "dotnet/win64/hostfxr.dll",
-            "dotnet/win64/nethost.dll"
+            "dotnet/win64/hostfxr.dll"
         ],
         "linux": [
-            "lua/liblua.so",
-            "js/libqjs.so.0",
-            "dotnet/linuxsteamrt64/libhostfxr.so",
-            "dotnet/linuxsteamrt64/libnethost.so"
+            "dotnet/linuxsteamrt64/libhostfxr.so"
         ]
     },
     "includes": [
         "lua",
-        "js",
         "dotnet"
     ]
 }

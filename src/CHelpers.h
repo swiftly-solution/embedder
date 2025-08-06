@@ -2,7 +2,6 @@
 #define _embedder_internal_chelpers_h
 
 #include <lua.hpp>
-#include <quickjs.h>
 #include <cassert>
 #include <string>
 #include <iostream>
@@ -14,22 +13,6 @@
 class CHelpers
 {
 public:
-    static JSValue js_print_to_console(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
-        int i;
-        const char* str;
-        size_t len;
-
-        for (i = 0; i < argc; i++) {
-            if (i != 0) fputc('\t', stdout);
-            str = JS_ToCStringLen(ctx, &len, argv[i]);
-            if (!str) return JS_EXCEPTION;
-            fwrite(str, 1, len, stdout);
-            JS_FreeCString(ctx, str);
-        }
-        fputc('\n', stdout);
-        return JS_UNDEFINED;
-    }
-
     static int indexMetaMethod(lua_State* L)
     {
         assert(lua_istable(L, 1) ||
@@ -170,16 +153,6 @@ public:
             *udata = nullptr;
         }
         return 0;
-    }
-
-    static void JSGCFunction(JSRuntime* rt, JSValue val)
-    {
-        ClassData* opaque = (ClassData*)JS_GetOpaque(val, JS_GetClassID(val));
-        if (opaque && CheckAndPopDeleteOnGC(opaque)) {
-            delete opaque;
-        }
-
-        JS_SetOpaque(val, nullptr);
     }
 
     static void DotNetGCFunction(EContext* ctx, ClassData* data, std::set<void*>* droppedValues)

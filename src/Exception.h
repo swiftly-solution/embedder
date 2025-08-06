@@ -5,7 +5,6 @@
 #include <string>
 
 #include <lua.hpp>
-#include <quickjs.h>
 
 #include "ContextKinds.h"
 #include "Context.h"
@@ -21,11 +20,7 @@ private:
 public:
     EException(void* ctx, ContextKinds kind, int /*code*/) { m_kind = kind; m_ctx = ctx; whatFromStack(); }
     EException(void* ctx, ContextKinds kind, char const*, char const*, long) { m_kind = kind; m_ctx = ctx; whatFromStack(); }
-    ~EException() throw() {
-        if (toDeallocate != nullptr) {
-            JS_FreeCString((JSContext*)m_ctx, toDeallocate);
-        }
-    }
+    ~EException() throw() {}
 
     const char* what() const throw() { return m_what.c_str(); }
 
@@ -82,34 +77,6 @@ protected:
             }
             else {
                 m_what = "Empty error.";
-            }
-        }
-        else if (m_kind == ContextKinds::JavaScript) {
-            if (JS_HasException((JSContext*)m_ctx)) {
-                JSValue exc = JS_GetException((JSContext*)m_ctx);
-
-                if (JS_IsString(exc)) {
-                    const char* tmp = JS_ToCString((JSContext*)m_ctx, exc);
-                    std::string str(tmp, strlen(tmp));
-                    m_what = str;
-                    JS_FreeCString((JSContext*)m_ctx, tmp);
-                }
-                else if (JS_IsError((JSContext*)m_ctx, exc)) {
-                    JSValue stack = JS_GetPropertyStr((JSContext*)m_ctx, exc, "stack");
-
-                    const char* tmp = JS_ToCString((JSContext*)m_ctx, exc);
-                    const char* stk = JS_ToCString((JSContext*)m_ctx, stack);
-                    std::string str(tmp);
-                    str += "\nStack Trace:\n" + std::string(stk);
-                    m_what = str;
-                    JS_FreeCString((JSContext*)m_ctx, stk);
-                    JS_FreeCString((JSContext*)m_ctx, tmp);
-
-                    JS_FreeValue((JSContext*)m_ctx, stack);
-                }
-                else m_what = "Empty error or invalid value.";
-
-                JS_FreeValue((JSContext*)m_ctx, exc);
             }
         }
     }

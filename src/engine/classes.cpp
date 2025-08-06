@@ -16,44 +16,6 @@ bool str_startswith(std::string value, std::string starting)
     return std::equal(starting.begin(), starting.end(), value.begin());
 }
 
-JSValue JSClassCallback(JSContext* L, JSValue this_val, int argc, JSValue* argv, int magic, JSValue* func_data);
-JSValue JSClassMemberIndex(JSContext* L, std::string str_key, JSValue* argv);
-JSValue JSClassMemberNewIndex(JSContext* L, std::string str_key, JSValue* argv);
-
-JSValue JSClassIndex(JSContext* L, JSValue this_val, int argc, JSValue* argv)
-{
-    auto ctx = GetContextByState(L);
-
-    auto classData = Stack<ClassData*>::getJS(ctx, argv[2]);
-    if (!classData) return JS_ThrowInternalError(L, "You can't access a member from a garbage collected variable. Save the variable somewhere before using it.");
-
-    std::string class_name = classData->GetClassname();
-    std::string member_name = Stack<std::string>::getJS(ctx, argv[1]);
-
-    std::string str_key = class_name + " " + member_name;
-    if (ctx->GetClassFunctionCall(str_key)) {
-        JSValue v[1] = { Stack<std::string>::pushJS(ctx, str_key) };
-        JSValue func = JS_NewCFunctionData(L, JSClassCallback, 0, 1, 1, (JSValue*)(v));
-        return func;
-    }
-
-    return JSClassMemberIndex(L, str_key, argv);
-}
-
-JSValue JSClassNewIndex(JSContext* L, JSValue this_val, int argc, JSValue* argv)
-{
-    auto ctx = GetContextByState(L);
-
-    auto classData = Stack<ClassData*>::getJS(ctx, argv[3]);
-    if (!classData) return JS_ThrowInternalError(L, "You can't set a member from a garbage collected variable. Save the variable somewhere before using it.");
-
-    std::string class_name = classData->GetClassname();
-    std::string member_name = Stack<std::string>::getJS(ctx, argv[1]);
-    std::string str_key = class_name + " " + member_name;
-
-    return JSClassMemberNewIndex(L, str_key, argv);
-}
-
 int LuaClassIndex(lua_State* L)
 {
     auto ctx = GetContextByState(L);
@@ -144,68 +106,6 @@ int LuaClassFunctionCall(lua_State* L)
     return hasResult;
 }
 
-JSValue JSClassCallback(JSContext* L, JSValue this_val, int argc, JSValue* argv, int magic, JSValue* func_data)
-{
-    auto ctx = GetContextByState(L);
-    std::string str_key = Stack<std::string>::getJS(ctx, func_data[0]);
-
-    FunctionContext fctx(str_key, ctx->GetKind(), ctx, argv, argc);
-    FunctionContext* fptr = &fctx;
-    ClassData* data = nullptr;
-    bool ignoreCustomReturn = false;
-
-    auto functionPreCalls = ctx->GetClassFunctionPreCalls(str_key);
-    auto functionPostCalls = ctx->GetClassFunctionPostCalls(str_key);
-    bool stopExecution = false;
-    JSValue ret = JS_UNDEFINED;
-
-    auto splits = str_split(str_key, " ");
-    if (splits[0] == splits[1])
-    {
-        data = new ClassData({}, splits[0], ctx);
-        ret = Stack<ClassData*>::pushJS(ctx, data);
-
-        if (JS_IsException(ret)) {
-            delete data;
-            return ret;
-        }
-        MarkDeleteOnGC(data);
-        ignoreCustomReturn = true;
-    }
-    else
-    {
-        data = (ClassData*)JS_GetOpaque(this_val, *ctx->GetClassID(splits[0]));
-    }
-
-    for (void* func : functionPreCalls)
-    {
-        reinterpret_cast<ScriptingClassFunctionCallback>(func)(fptr, data);
-        if (fctx.ShouldStopExecution())
-        {
-            stopExecution = true;
-            break;
-        }
-    }
-
-    if (!stopExecution) {
-        void* func = ctx->GetClassFunctionCall(str_key);
-        if (func) {
-            ScriptingClassFunctionCallback cb = reinterpret_cast<ScriptingClassFunctionCallback>(func);
-            cb(fptr, data);
-        }
-
-        for (void* func : functionPostCalls)
-        {
-            reinterpret_cast<ScriptingClassFunctionCallback>(func)(fptr, data);
-            if (fctx.ShouldStopExecution()) break;
-        }
-    }
-
-    if (ignoreCustomReturn) return ret;
-    else if (fctx.HasResult()) return fctx.pushJSResult();
-    else return JS_UNDEFINED;
-}
-
 void DotnetClassCallback(EContext* ctx, CallContext& call_ctx, bool bypassClassCheck)
 {
     std::string str_key = call_ctx.GetNamespace() + " " + call_ctx.GetFunction();
@@ -276,22 +176,6 @@ void AddScriptingClass(EContext* ctx, std::string class_name)
 
         lua_pop(L, 1);
     }
-    else if (ctx->GetKind() == ContextKinds::JavaScript)
-    {
-        auto L = ctx->GetJSState();
-        auto& classID = *ctx->GetClassID(class_name);
-        if (classID != 0)
-            return;
-
-        JSRuntime* rt = JS_GetRuntime(L);
-        JS_NewClassID(rt, &classID);
-
-        JSClassDef class_def = {
-            class_name.c_str() };
-        class_def.finalizer = CHelpers::JSGCFunction;
-
-        JS_NewClass(rt, classID, &class_def);
-    }
 }
 
 void AddScriptingClassFunction(EContext* ctx, std::string class_name, std::string function_name, ScriptingClassFunctionCallback callback)
@@ -317,17 +201,6 @@ void AddScriptingClassFunction(EContext* ctx, std::string class_name, std::strin
             rawsetfield(L, -2, function_name.c_str());
 
             lua_pop(L, 1);
-        }
-    }
-    else if (ctx->GetKind() == ContextKinds::JavaScript)
-    {
-        auto L = ctx->GetJSState();
-        if (function_name == class_name)
-        {
-            auto ns = JS_GetGlobalObject(L);
-            std::vector<JSValue> vals = { Stack<std::string>::pushJS(ctx, func_key) };
-            JS_SetPropertyStr(L, ns, class_name.c_str(), JS_NewCFunctionData(L, JSClassCallback, 0, 1, 1, vals.data()));
-            JS_FreeValue(L, ns);
         }
     }
 }
@@ -359,21 +232,6 @@ EValue CreateScriptingClassInstance(EContext* context, std::string class_name, s
         MarkDeleteOnGC(data);
 
         return EValue(context, 0, false);
-    }
-    else if (context->GetKind() == ContextKinds::JavaScript)
-    {
-        auto L = context->GetJSState();
-        auto data = new ClassData(classdata, class_name, context);
-        auto ret = Stack<ClassData*>::pushJS(context, data);
-        if (JS_IsException(ret)) {
-            delete data;
-            return EValue(context);
-        }
-
-        MarkDeleteOnGC(data);
-        EValue v(context, ret);
-        JS_FreeValue(L, ret);
-        return v;
     }
     else if (context->GetKind() == ContextKinds::Dotnet) {
         auto data = new ClassData(classdata, class_name, context);

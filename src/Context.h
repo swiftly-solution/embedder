@@ -6,7 +6,6 @@
 #include <string>
 
 #include <lua.hpp>
-#include <quickjs.h>
 #include "dotnet/invoker.h"
 #include <vector>
 
@@ -20,9 +19,6 @@ private:
     void* m_state;
     ContextKinds m_kind;
     std::set<EValue*> mappedValues;
-
-    std::map<std::string, JSClassID> classIDs;
-    std::map<std::string, JSValue> classPrototypes;
 
     std::map<std::string, void*> functionCalls;
 
@@ -53,15 +49,11 @@ public:
     int64_t GetMemoryUsage();
     void* GetState();
     lua_State* GetLuaState();
-    JSContext* GetJSState();
 
     int RunFile(std::string path);
 
     void PushValue(EValue* val);
     void PopValue(EValue* val);
-
-    JSClassID* GetClassID(std::string className);
-    std::string GetClsName(JSClassID id);
 
     void AddFunctionCall(std::string key, void* val);
     void* GetFunctionCall(std::string key);
@@ -91,7 +83,6 @@ public:
     std::vector<std::pair<void*, void*>> GetClassMemberPostCalls(std::string function_key);
 };
 
-EContext* GetContextByState(JSContext* ctx);
 EContext* GetContextByState(lua_State* ctx);
 
 #endif

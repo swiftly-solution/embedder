@@ -42,14 +42,12 @@ template <>
 struct Stack<void>
 {
     static void pushLua(EContext*) {}
-    static void pushJS(EContext*) {}
 };
 
 template <>
 struct Stack<EContext*>
 {
     static EContext* getLua(EContext* ctx, int) { return ctx; }
-    static EContext* getJS(EContext* ctx, JSValue) { return ctx; }
     static EContext* getDotnet(EContext* ctx, CallContext*, int) { return ctx; }
 };
 
@@ -59,11 +57,6 @@ struct Stack<nullptr_t>
     static void pushLua(EContext* ctx, nullptr_t value = nullptr)
     {
         lua_pushnil((lua_State*)(ctx->GetState()));
-    }
-
-    static JSValue pushJS(EContext* ctx, nullptr_t value = nullptr)
-    {
-        return JS_NULL;
     }
 
     static nullptr_t pushRawDotnet(EContext* ctx, CallContext* context, nullptr_t value = nullptr)
@@ -88,11 +81,6 @@ struct Stack<nullptr_t>
         return nullptr;
     }
 
-    static nullptr_t getJS(EContext* ctx, JSValue value)
-    {
-        return nullptr;
-    }
-
     static nullptr_t getDotnet(EContext* ctx, CallContext*, int)
     {
         return nullptr;
@@ -101,11 +89,6 @@ struct Stack<nullptr_t>
     static bool isLuaInstance(EContext* ctx, int ref)
     {
         return lua_isnil((lua_State*)(ctx->GetState()), ref);
-    }
-
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        return JS_IsNull(value);
     }
 
     static bool isDotnetInstance(EContext* ctx, CallContext* context, int argument)
@@ -121,11 +104,6 @@ struct Stack<int>
     static void pushLua(EContext* ctx, int value)
     {
         lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
-    }
-
-    static JSValue pushJS(EContext* ctx, int value)
-    {
-        return JS_NewInt32((JSContext*)(ctx->GetState()), value);
     }
 
     static int pushRawDotnet(EContext* ctx, CallContext* context, int value)
@@ -150,13 +128,6 @@ struct Stack<int>
         return (int)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
-    static int getJS(EContext* ctx, JSValue value)
-    {
-        int val;
-        JS_ToInt32((JSContext*)(ctx->GetState()), &val, value);
-        return val;
-    }
-
     static int getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
         return *(int*)value;
@@ -178,11 +149,6 @@ struct Stack<int>
         return isNumber;
     }
 
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        return JS_IsNumber(value);
-    }
-
     static bool IsDotnetInstance(EContext* ctx, CallContext* context, int index)
     {
         if (index == -1) return context->GetReturnType() == typesMap[typeid(int)];
@@ -196,11 +162,6 @@ struct Stack<long int>
     static void pushLua(EContext* ctx, long int value)
     {
         lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
-    }
-
-    static JSValue pushJS(EContext* ctx, long int value)
-    {
-        return JS_NewInt32((JSContext*)(ctx->GetState()), value);
     }
 
     static long int pushRawDotnet(EContext* ctx, CallContext* context, long int value)
@@ -225,13 +186,6 @@ struct Stack<long int>
         return (long int)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
-    static long int getJS(EContext* ctx, JSValue value)
-    {
-        int val;
-        JS_ToInt32((JSContext*)(ctx->GetState()), &val, value);
-        return (long int)val;
-    }
-
     static long int getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
         return *(long int*)value;
@@ -253,11 +207,6 @@ struct Stack<long int>
         return isNumber;
     }
 
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        return JS_IsNumber(value);
-    }
-
     static bool IsDotnetInstance(EContext* ctx, CallContext* context, int index)
     {
         if (index == -1) return context->GetReturnType() == typesMap[typeid(int)];
@@ -271,11 +220,6 @@ struct Stack<unsigned int>
     static void pushLua(EContext* ctx, unsigned int value)
     {
         lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
-    }
-
-    static JSValue pushJS(EContext* ctx, unsigned int value)
-    {
-        return JS_NewUint32((JSContext*)(ctx->GetState()), value);
     }
 
     static unsigned int pushRawDotnet(EContext* ctx, CallContext* context, unsigned int value)
@@ -300,13 +244,6 @@ struct Stack<unsigned int>
         return (unsigned int)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
-    static unsigned int getJS(EContext* ctx, JSValue value)
-    {
-        unsigned int val;
-        JS_ToUint32((JSContext*)(ctx->GetState()), &val, value);
-        return val;
-    }
-
     static unsigned int getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
         return *(unsigned int*)value;
@@ -323,11 +260,6 @@ struct Stack<unsigned int>
         return Stack<int>::isLuaInstance(ctx, ref);
     }
 
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        return Stack<int>::isJSInstance(ctx, value);
-    }
-
     static bool IsDotnetInstance(EContext* ctx, CallContext* context, int index)
     {
         if (index == -1) return context->GetReturnType() == typesMap[typeid(unsigned int)];
@@ -341,11 +273,6 @@ struct Stack<long unsigned int>
     static void pushLua(EContext* ctx, long unsigned int value)
     {
         lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
-    }
-
-    static JSValue pushJS(EContext* ctx, long unsigned int value)
-    {
-        return JS_NewUint32((JSContext*)(ctx->GetState()), value);
     }
 
     static long unsigned int pushRawDotnet(EContext* ctx, CallContext* context, long unsigned int value)
@@ -370,13 +297,6 @@ struct Stack<long unsigned int>
         return (long unsigned int)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
-    static long unsigned int getJS(EContext* ctx, JSValue value)
-    {
-        unsigned int val;
-        JS_ToUint32((JSContext*)(ctx->GetState()), &val, value);
-        return (long unsigned int)val;
-    }
-
     static long unsigned int getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
         return *(long unsigned int*)value;
@@ -393,11 +313,6 @@ struct Stack<long unsigned int>
         return Stack<int>::isLuaInstance(ctx, ref);
     }
 
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        return Stack<int>::isJSInstance(ctx, value);
-    }
-
     static bool IsDotnetInstance(EContext* ctx, CallContext* context, int index)
     {
         if (index == -1) return context->GetReturnType() == typesMap[typeid(unsigned int)];
@@ -411,11 +326,6 @@ struct Stack<uint8_t>
     static void pushLua(EContext* ctx, uint8_t value)
     {
         lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
-    }
-
-    static JSValue pushJS(EContext* ctx, uint8_t value)
-    {
-        return JS_NewUint32((JSContext*)(ctx->GetState()), value);
     }
 
     static uint8_t pushRawDotnet(EContext* ctx, CallContext* context, uint8_t value)
@@ -440,13 +350,6 @@ struct Stack<uint8_t>
         return (uint8_t)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
-    static uint8_t getJS(EContext* ctx, JSValue value)
-    {
-        unsigned int val;
-        JS_ToUint32((JSContext*)(ctx->GetState()), &val, value);
-        return (uint8_t)val;
-    }
-
     static uint8_t getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
         return *(uint8_t*)value;
@@ -463,11 +366,6 @@ struct Stack<uint8_t>
         return Stack<int>::isLuaInstance(ctx, ref);
     }
 
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        return Stack<int>::isJSInstance(ctx, value);
-    }
-
     static bool IsDotnetInstance(EContext* ctx, CallContext* context, int index)
     {
         if (index == -1) return context->GetReturnType() == typesMap[typeid(uint8_t)];
@@ -481,11 +379,6 @@ struct Stack<int16_t>
     static void pushLua(EContext* ctx, int16_t value)
     {
         lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
-    }
-
-    static JSValue pushJS(EContext* ctx, int16_t value)
-    {
-        return JS_NewInt32((JSContext*)(ctx->GetState()), value);
     }
 
     static int16_t pushRawDotnet(EContext* ctx, CallContext* context, int16_t value)
@@ -510,13 +403,6 @@ struct Stack<int16_t>
         return (int16_t)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
-    static int16_t getJS(EContext* ctx, JSValue value)
-    {
-        int val;
-        JS_ToInt32((JSContext*)(ctx->GetState()), &val, value);
-        return (int16_t)val;
-    }
-
     static int16_t getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
         return *(int16_t*)value;
@@ -533,11 +419,6 @@ struct Stack<int16_t>
         return Stack<int>::isLuaInstance(ctx, ref);
     }
 
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        return Stack<int>::isJSInstance(ctx, value);
-    }
-
     static bool IsDotnetInstance(EContext* ctx, CallContext* context, int index)
     {
         if (index == -1) return context->GetReturnType() == typesMap[typeid(short)];
@@ -551,11 +432,6 @@ struct Stack<uint16_t>
     static void pushLua(EContext* ctx, uint16_t value)
     {
         lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
-    }
-
-    static JSValue pushJS(EContext* ctx, uint16_t value)
-    {
-        return JS_NewUint32((JSContext*)(ctx->GetState()), value);
     }
 
     static uint16_t pushRawDotnet(EContext* ctx, CallContext* context, uint16_t value)
@@ -580,13 +456,6 @@ struct Stack<uint16_t>
         return (uint16_t)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
-    static uint16_t getJS(EContext* ctx, JSValue value)
-    {
-        unsigned int val;
-        JS_ToUint32((JSContext*)(ctx->GetState()), &val, value);
-        return (uint16_t)val;
-    }
-
     static uint16_t getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
         return *(uint16_t*)value;
@@ -603,11 +472,6 @@ struct Stack<uint16_t>
         return Stack<int>::isLuaInstance(ctx, ref);
     }
 
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        return Stack<int>::isJSInstance(ctx, value);
-    }
-
     static bool IsDotnetInstance(EContext* ctx, CallContext* context, int index)
     {
         if (index == -1) return context->GetReturnType() == typesMap[typeid(unsigned short)];
@@ -621,11 +485,6 @@ struct Stack<int8_t>
     static void pushLua(EContext* ctx, int8_t value)
     {
         lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
-    }
-
-    static JSValue pushJS(EContext* ctx, int8_t value)
-    {
-        return JS_NewUint32((JSContext*)(ctx->GetState()), value);
     }
 
     static int8_t pushRawDotnet(EContext* ctx, CallContext* context, int8_t value)
@@ -650,13 +509,6 @@ struct Stack<int8_t>
         return (int8_t)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
-    static int8_t getJS(EContext* ctx, JSValue value)
-    {
-        unsigned int val;
-        JS_ToUint32((JSContext*)(ctx->GetState()), &val, value);
-        return (int8_t)val;
-    }
-
     static int8_t getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
         return *(int8_t*)value;
@@ -673,11 +525,6 @@ struct Stack<int8_t>
         return Stack<int>::isLuaInstance(ctx, ref);
     }
 
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        return Stack<int>::isJSInstance(ctx, value);
-    }
-
     static bool IsDotnetInstance(EContext* ctx, CallContext* context, int index)
     {
         if (index == -1) return context->GetReturnType() == typesMap[typeid(int8_t)];
@@ -691,11 +538,6 @@ struct Stack<long long int>
     static void pushLua(EContext* ctx, long long int value)
     {
         lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
-    }
-
-    static JSValue pushJS(EContext* ctx, long long int value)
-    {
-        return JS_NewInt64((JSContext*)(ctx->GetState()), value);
     }
 
     static long long int pushRawDotnet(EContext* ctx, CallContext* context, long long int value)
@@ -720,13 +562,6 @@ struct Stack<long long int>
         return (long long int)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
-    static long long int getJS(EContext* ctx, JSValue value)
-    {
-        int64_t val;
-        JS_ToInt64((JSContext*)(ctx->GetState()), &val, value);
-        return (long long int)val;
-    }
-
     static long long int getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
         return *(long long int*)value;
@@ -743,11 +578,6 @@ struct Stack<long long int>
         return Stack<int>::isLuaInstance(ctx, ref);
     }
 
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        return Stack<int>::isJSInstance(ctx, value);
-    }
-
     static bool IsDotnetInstance(EContext* ctx, CallContext* context, int index)
     {
         if (index == -1) return context->GetReturnType() == typesMap[typeid(int64_t)];
@@ -761,11 +591,6 @@ struct Stack<long long unsigned int>
     static void pushLua(EContext* ctx, long long unsigned int value)
     {
         lua_pushinteger((lua_State*)(ctx->GetState()), (lua_Integer)value);
-    }
-
-    static JSValue pushJS(EContext* ctx, long long unsigned int value)
-    {
-        return JS_NewBigUint64((JSContext*)(ctx->GetState()), value);
     }
 
     static long long unsigned int pushRawDotnet(EContext* ctx, CallContext* context, long long unsigned int value)
@@ -790,13 +615,6 @@ struct Stack<long long unsigned int>
         return (long long unsigned int)luaL_checkinteger((lua_State*)(ctx->GetState()), ref);
     }
 
-    static long long unsigned int getJS(EContext* ctx, JSValue value)
-    {
-        uint64_t val;
-        JS_ToBigUint64((JSContext*)(ctx->GetState()), &val, value);
-        return (long long unsigned int)val;
-    }
-
     static long long unsigned int getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
         return *(long long unsigned int*)value;
@@ -813,11 +631,6 @@ struct Stack<long long unsigned int>
         return Stack<int>::isLuaInstance(ctx, ref);
     }
 
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        return Stack<int>::isJSInstance(ctx, value);
-    }
-
     static bool IsDotnetInstance(EContext* ctx, CallContext* context, int index)
     {
         if (index == -1) return context->GetReturnType() == typesMap[typeid(uint64_t)];
@@ -831,11 +644,6 @@ struct Stack<float>
     static void pushLua(EContext* ctx, float value)
     {
         lua_pushnumber((lua_State*)(ctx->GetState()), (lua_Number)value);
-    }
-
-    static JSValue pushJS(EContext* ctx, float value)
-    {
-        return JS_NewFloat64((JSContext*)(ctx->GetState()), (double)value);
     }
 
     static float pushRawDotnet(EContext* ctx, CallContext* context, float value)
@@ -860,13 +668,6 @@ struct Stack<float>
         return (float)luaL_checknumber((lua_State*)(ctx->GetState()), ref);
     }
 
-    static float getJS(EContext* ctx, JSValue value)
-    {
-        double val;
-        JS_ToFloat64((JSContext*)(ctx->GetState()), &val, value);
-        return (float)val;
-    }
-
     static float getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
         return *(float*)value;
@@ -883,11 +684,6 @@ struct Stack<float>
         return lua_type((lua_State*)(ctx->GetState()), ref) == LUA_TNUMBER;
     }
 
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        return JS_IsNumber(value);
-    }
-
     static bool IsDotnetInstance(EContext* ctx, CallContext* context, int index)
     {
         if (index == -1) return context->GetReturnType() == typesMap[typeid(float)];
@@ -901,11 +697,6 @@ struct Stack<double>
     static void pushLua(EContext* ctx, double value)
     {
         lua_pushnumber((lua_State*)(ctx->GetState()), (lua_Number)value);
-    }
-
-    static JSValue pushJS(EContext* ctx, double value)
-    {
-        return JS_NewFloat64((JSContext*)(ctx->GetState()), value);
     }
 
     static double pushRawDotnet(EContext* ctx, CallContext* context, double value)
@@ -930,13 +721,6 @@ struct Stack<double>
         return (double)luaL_checknumber((lua_State*)(ctx->GetState()), ref);
     }
 
-    static double getJS(EContext* ctx, JSValue value)
-    {
-        double val;
-        JS_ToFloat64((JSContext*)(ctx->GetState()), &val, value);
-        return val;
-    }
-
     static double getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
         return *(double*)value;
@@ -953,11 +737,6 @@ struct Stack<double>
         return lua_type((lua_State*)(ctx->GetState()), ref) == LUA_TNUMBER;
     }
 
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        return JS_IsNumber(value);
-    }
-
     static bool IsDotnetInstance(EContext* ctx, CallContext* context, int index)
     {
         if (index == -1) return context->GetReturnType() == typesMap[typeid(double)];
@@ -971,11 +750,6 @@ struct Stack<bool>
     static void pushLua(EContext* ctx, bool value)
     {
         lua_pushboolean((lua_State*)(ctx->GetState()), int(value));
-    }
-
-    static JSValue pushJS(EContext* ctx, bool value)
-    {
-        return JS_NewBool((JSContext*)(ctx->GetState()), value);
     }
 
     static bool pushRawDotnet(EContext* ctx, CallContext* context, bool value)
@@ -1000,11 +774,6 @@ struct Stack<bool>
         return (lua_toboolean((lua_State*)(ctx->GetState()), ref) == 1);
     }
 
-    static bool getJS(EContext* ctx, JSValue value)
-    {
-        return JS_ToBool((JSContext*)(ctx->GetState()), value) == 1;
-    }
-
     static bool getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
         return *(bool*)value;
@@ -1021,11 +790,6 @@ struct Stack<bool>
         return lua_type((lua_State*)(ctx->GetState()), ref) == LUA_TBOOLEAN;
     }
 
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        return JS_IsBool(value);
-    }
-
     static bool IsDotnetInstance(EContext* ctx, CallContext* context, int index)
     {
         if (index == -1) return context->GetReturnType() == typesMap[typeid(bool)];
@@ -1039,11 +803,6 @@ struct Stack<char>
     static void pushLua(EContext* ctx, char value)
     {
         lua_pushlstring((lua_State*)(ctx->GetState()), &value, 1);
-    }
-
-    static JSValue pushJS(EContext* ctx, char value)
-    {
-        return JS_NewStringLen((JSContext*)(ctx->GetState()), &value, 1);
     }
 
     static char* pushRawDotnet(EContext* ctx, CallContext* context, char value)
@@ -1071,17 +830,6 @@ struct Stack<char>
         return luaL_checkstring((lua_State*)(ctx->GetState()), ref)[0];
     }
 
-    static char getJS(EContext* ctx, JSValue value)
-    {
-        size_t len;
-        auto val = JS_ToCStringLen((JSContext*)(ctx->GetState()), &len, value);
-        char out = '\0';
-        if (len != 0)
-            out = (char)(val[0]);
-        JS_FreeCString((JSContext*)(ctx->GetState()), val);
-        return out;
-    }
-
     static char getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
         return *(char*)value;
@@ -1096,11 +844,6 @@ struct Stack<char>
     static bool isLuaInstance(EContext* ctx, int ref)
     {
         return lua_type((lua_State*)(ctx->GetState()), ref) == LUA_TSTRING;
-    }
-
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        return JS_IsString(value);
     }
 
     static bool IsDotnetInstance(EContext* ctx, CallContext* context, int index)
@@ -1119,11 +862,6 @@ struct Stack<char const*>
             lua_pushstring((lua_State*)(ctx->GetState()), value);
         else
             lua_pushnil((lua_State*)(ctx->GetState()));
-    }
-
-    static JSValue pushJS(EContext* ctx, char const* value)
-    {
-        return JS_NewString((JSContext*)(ctx->GetState()), value);
     }
 
     static char* pushRawDotnet(EContext* ctx, CallContext* context, std::string value)
@@ -1150,12 +888,6 @@ struct Stack<char const*>
         return lua_isnil((lua_State*)(ctx->GetState()), ref) ? nullptr : luaL_checkstring((lua_State*)(ctx->GetState()), ref);
     }
 
-    static char const* getJS(EContext* ctx, JSValue value)
-    {
-        // Not getting the value due to it's necessity to free after getting the value, leaving memory leak.
-        return nullptr;
-    }
-
     static char const* getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
         return *(char const**)value;
@@ -1172,11 +904,6 @@ struct Stack<char const*>
         return lua_type((lua_State*)(ctx->GetState()), ref) == LUA_TSTRING;
     }
 
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        return JS_IsString(value);
-    }
-
     static bool IsDotnetInstance(EContext* ctx, CallContext* context, int index)
     {
         if (index == -1) return context->GetReturnType() == typesMap[typeid(std::string)];
@@ -1190,11 +917,6 @@ struct Stack<std::string>
     static void pushLua(EContext* ctx, std::string value)
     {
         lua_pushlstring((lua_State*)(ctx->GetState()), value.data(), value.size());
-    }
-
-    static JSValue pushJS(EContext* ctx, std::string value)
-    {
-        return JS_NewStringLen((JSContext*)(ctx->GetState()), value.data(), value.size());
     }
 
     static char* pushRawDotnet(EContext* ctx, CallContext* context, std::string value)
@@ -1234,15 +956,6 @@ struct Stack<std::string>
         return s;
     }
 
-    static std::string getJS(EContext* ctx, JSValue value)
-    {
-        size_t len;
-        const char* str = JS_ToCStringLen((JSContext*)(ctx->GetState()), &len, value);
-        std::string s(str, len);
-        JS_FreeCString((JSContext*)(ctx->GetState()), str);
-        return s;
-    }
-
     static std::string getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
         char* out = *(char**)value;
@@ -1266,11 +979,6 @@ struct Stack<std::string>
         return lua_type((lua_State*)(ctx->GetState()), ref) == LUA_TSTRING;
     }
 
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        return JS_IsString(value);
-    }
-
     static bool IsDotnetInstance(EContext* ctx, CallContext* context, int index)
     {
         if (index == -1) return context->GetReturnType() == typesMap[typeid(std::string)];
@@ -1292,19 +1000,6 @@ struct Stack<std::vector<T>>
             Stack<T>::pushLua(ctx, value[i]);
             lua_settable(L, -3);
         }
-    }
-
-    static JSValue pushJS(EContext* ctx, std::vector<T> value)
-    {
-        JSContext* ct = (JSContext*)(ctx->GetState());
-        JSValue arr = JS_NewArray(ct);
-
-        for (size_t i = 0; i < value.size(); i++)
-        {
-            JS_SetPropertyUint32(ct, arr, i, Stack<T>::pushJS(ctx, value[i]));
-        }
-
-        return arr;
     }
 
     static T* pushRawDotnet(EContext* ctx, CallContext* context, std::vector<T> value)
@@ -1393,28 +1088,6 @@ struct Stack<std::vector<T>>
         return v;
     }
 
-    static std::vector<T> getJS(EContext* ctx, JSValue value)
-    {
-        std::vector<T> v;
-
-        JSContext* L = (JSContext*)(ctx->GetState());
-        if (!JS_IsArray(value))
-            return v;
-
-        uint32_t len = JSGetArrayLength(L, value);
-
-        v.reserve((std::size_t)(len));
-
-        for (uint32_t i = 0; i < len; i++)
-        {
-            JSValue item = JS_GetPropertyUint32(L, value, i);
-            v.push_back(Stack<T>::getJS(ctx, item));
-            JS_FreeValue(L, item);
-        }
-
-        return v;
-    }
-
     static std::vector<T> getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
         ArrayData* arrayDatas = *(ArrayData**)value;
@@ -1451,11 +1124,6 @@ struct Stack<std::vector<T>>
         return lua_istable((lua_State*)(ctx->GetState()), ref);
     }
 
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        return JS_IsArray(value);
-    }
-
     static bool IsDotnetInstance(EContext* ctx, CallContext* context, int index)
     {
         if (index == -1) return context->GetReturnType() == 15;
@@ -1481,23 +1149,6 @@ struct Stack<std::map<K, V>>
             Stack<V>::pushLua(ctx, it->second);
             lua_settable(L, -3);
         }
-    }
-
-    static JSValue pushJS(EContext* ctx, M value)
-    {
-        JSContext* ct = (JSContext*)(ctx->GetState());
-        JSValue arr = JS_NewArray(ct);
-
-        typedef typename M::const_iterator ConstIter;
-
-        for (ConstIter it = value.begin(); it != value.end(); ++it)
-        {
-            JSAtom at = JS_ValueToAtom(ct, Stack<K>::pushJS(ctx, it->first));
-            JS_SetProperty(ct, arr, at, Stack<V>::pushJS(ctx, it->second));
-            JS_FreeAtom(ct, at);
-        }
-
-        return arr;
     }
 
     static MapData* pushRawDotnet(EContext* ctx, CallContext* context, M value)
@@ -1596,38 +1247,6 @@ struct Stack<std::map<K, V>>
         return v;
     }
 
-    static M getJS(EContext* ctx, JSValue value)
-    {
-        M v;
-
-        JSContext* L = (JSContext*)(ctx->GetState());
-        if (!JS_IsObject(value))
-            return v;
-
-        JSPropertyEnum* properties;
-        uint32_t propCount;
-
-        if (JS_GetOwnPropertyNames(L, &properties, &propCount, value, JS_GPN_ENUM_ONLY | JS_GPN_STRING_MASK | JS_GPN_SYMBOL_MASK) < 0)
-        {
-            return v;
-        }
-
-        for (uint32_t i = 0; i < propCount; i++)
-        {
-            JSValue propVal = JS_AtomToValue(L, properties[i].atom);
-            JSValue property = JS_GetProperty(L, value, properties[i].atom);
-
-            v.emplace(Stack<K>::getJS(ctx, propVal), Stack<V>::getJS(ctx, property));
-
-            JS_FreeValue(L, propVal);
-            JS_FreeValue(L, property);
-        }
-
-        JS_FreePropertyEnum(L, properties, propCount);
-
-        return v;
-    }
-
     static M getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
         MapData* mapDatas = *(MapData**)value;
@@ -1655,11 +1274,6 @@ struct Stack<std::map<K, V>>
         return lua_istable((lua_State*)(ctx->GetState()), ref);
     }
 
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        return JS_IsObject(value);
-    }
-
     static bool IsDotnetInstance(EContext* ctx, CallContext* context, int index)
     {
         if (index == -1) return context->GetReturnType() == 16;
@@ -1685,19 +1299,6 @@ struct Stack<std::unordered_map<K, V>>
             Stack<V>::pushLua(ctx, it->second);
             lua_settable(L, -3);
         }
-    }
-
-    static JSValue pushJS(EContext* ctx, M value)
-    {
-        JSContext* ct = (JSContext*)(ctx->GetState());
-        JSValue arr = JS_NewArray(ct);
-
-        typedef typename M::const_iterator ConstIter;
-
-        for (ConstIter it = value.begin(); it != value.end(); ++it)
-            JS_SetProperty(ct, arr, Stack<K>::pushJS(ctx, it->first), Stack<V>::pushJS(ctx, it->second));
-
-        return arr;
     }
 
     static MapData* pushRawDotnet(EContext* ctx, CallContext* context, M value)
@@ -1794,38 +1395,6 @@ struct Stack<std::unordered_map<K, V>>
         return v;
     }
 
-    static M getJS(EContext* ctx, JSValue value)
-    {
-        M v;
-
-        JSContext* L = (JSContext*)(ctx->GetState());
-        if (!JS_IsObject(value))
-            return v;
-
-        JSPropertyEnum* properties;
-        uint32_t propCount;
-
-        if (JS_GetOwnPropertyNames(L, &properties, &propCount, value, JS_GPN_ENUM_ONLY | JS_GPN_STRING_MASK | JS_GPN_SYMBOL_MASK) < 0)
-        {
-            return v;
-        }
-
-        for (uint32_t i = 0; i < propCount; i++)
-        {
-            JSValue propVal = JS_AtomToValue(L, properties[i].atom);
-            JSValue property = JS_GetProperty(L, value, properties[i].atom);
-
-            v.emplace(Stack<K>::getJS(ctx, propVal), Stack<V>::getJS(ctx, property));
-
-            JS_FreeValue(L, propVal);
-            JS_FreeValue(L, property);
-        }
-
-        JS_FreePropertyEnum(L, properties, propCount);
-
-        return v;
-    }
-
     static M getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
         MapData* mapDatas = *(MapData**)value;
@@ -1853,11 +1422,6 @@ struct Stack<std::unordered_map<K, V>>
         return lua_istable((lua_State*)(ctx->GetState()), ref);
     }
 
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        return JS_IsObject(value);
-    }
-
     static bool IsDotnetInstance(EContext* ctx, CallContext* context, int index)
     {
         if (index == -1) return context->GetReturnType() == 16;
@@ -1879,17 +1443,6 @@ struct Stack<std::pair<T1, T2>>
         lua_pushinteger(L, (lua_Integer)2);
         Stack<T2>::pushLua(ctx, value.second);
         lua_settable(L, -3);
-    }
-
-    static JSValue pushJS(EContext* ctx, std::pair<T1, T2> value)
-    {
-        JSContext* ct = (JSContext*)(ctx->GetState());
-        JSValue arr = JS_NewArray(ct);
-
-        JS_SetPropertyUint32(ct, arr, 0, Stack<T1>::pushJS(ctx, value.first));
-        JS_SetPropertyUint32(ct, arr, 1, Stack<T2>::pushJS(ctx, value.second));
-
-        return arr;
     }
 
     static T1* pushRawDotnet(EContext* ctx, CallContext* context, std::pair<T1, T2> value)
@@ -1943,29 +1496,6 @@ struct Stack<std::pair<T1, T2>>
         return v;
     }
 
-    static std::pair<T1, T2> getJS(EContext* ctx, JSValue value)
-    {
-        std::pair<T1, T2> v;
-
-        JSContext* L = (JSContext*)(ctx->GetState());
-        if (!JS_IsArray(value))
-            return v;
-
-        uint32_t len = JSGetArrayLength(L, value);
-        if (len != 2)
-            return v;
-
-        JSValue item = JS_GetPropertyUint32(L, value, 0);
-        v.first = Stack<T1>::getJS(ctx, item);
-        JS_FreeValue(L, item);
-
-        JSValue item2 = JS_GetPropertyUint32(L, value, 1);
-        v.second = Stack<T2>::getJS(ctx, item2);
-        JS_FreeValue(L, item2);
-
-        return v;
-    }
-
     static std::pair<T1, T2> getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
         ArrayData* arrayDatas = *(ArrayData**)value;
@@ -1996,22 +1526,12 @@ struct Stack<std::pair<T1, T2>>
         return lua_istable((lua_State*)(ctx->GetState()), ref) && get_length((lua_State*)(ctx->GetState()), ref) == 2;
     }
 
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        if (!JS_IsArray(value))
-            return false;
-        return JSGetArrayLength((JSContext*)(ctx->GetState()), value) == 2;
-    }
-
     static bool IsDotnetInstance(EContext* ctx, CallContext* context, int index)
     {
         if (index == -1) return context->GetReturnType() == 15;
         else return context->GetArgumentType(index) == 15;
     }
 };
-
-JSValue JSClassIndex(JSContext* L, JSValue this_val, int argc, JSValue* argv);
-JSValue JSClassNewIndex(JSContext* L, JSValue this_val, int argc, JSValue* argv);
 
 template<>
 struct Stack<ClassData*>
@@ -2036,63 +1556,6 @@ struct Stack<ClassData*>
         std::vector<ClassData**> udatas = value->GetDataOr<std::vector<ClassData**>>("lua_udatas", std::vector<ClassData**>{});
         udatas.push_back(udata);
         value->SetData("lua_udatas", udatas);
-    }
-
-    static JSValue pushJS(EContext* ctx, ClassData* value)
-    {
-        if (ShouldDeleteOnGC(value)) {
-            value = new ClassData(*value);
-            MarkDeleteOnGC(value);
-        }
-
-        auto L = ctx->GetJSState();
-
-        JSValue global_obj = JS_GetGlobalObject(L);
-        JSValue proxy_ctor = JS_GetPropertyStr(L, global_obj, "Proxy");
-        JS_FreeValue(L, global_obj);
-
-        JSValue handler = JS_NewObject(L);
-        JS_SetPropertyStr(L, handler, "get", JS_NewCFunction(L, JSClassIndex, "get", 2));
-        JS_SetPropertyStr(L, handler, "set", JS_NewCFunction(L, JSClassNewIndex, "set", 3));
-
-        JSValue args[2] = { JS_NewObject(L), handler };
-        JSValue proxy_obj = JS_CallConstructor(L, proxy_ctor, 2, args);
-
-        JS_FreeValue(L, proxy_ctor);
-        JS_FreeValue(L, handler);
-
-        JSClassID& id = *(ctx->GetClassID(value->GetClassname()));
-        JS_SetClassProto(L, id, proxy_obj);
-        auto ret = JS_NewObjectProtoClass(L, JS_GetClassProto(L, id), id);
-
-        if (JS_IsException(ret))
-        {
-            JS_FreeValue(L, ret);
-            return JS_EXCEPTION;
-        }
-        else
-        {
-            JS_SetOpaque(ret, (void*)value);
-
-            std::vector<JSRuntime*> rts = value->GetDataOr<std::vector<JSRuntime*>>("js_runtimes", std::vector<JSRuntime*>{});
-            bool found = false;
-
-            auto rt = JS_GetRuntime(L);
-
-            for (int i = 0; i < rts.size(); i++) {
-                if (rts[i] == rt) {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found) {
-                rts.push_back(rt);
-                value->SetData("js_runtimes", rts);
-            }
-        }
-
-        return ret;
     }
 
     static ClassData* pushRawDotnet(EContext* ctx, CallContext* context, ClassData* value)
@@ -2125,17 +1588,6 @@ struct Stack<ClassData*>
         return data ? *data : nullptr;
     }
 
-    static ClassData* getJS(EContext* ctx, JSValue value)
-    {
-        auto vl = (ClassData*)JS_GetOpaque(value, JS_GetClassID(value));
-
-        auto deletedClassDatas = (std::set<ClassData*>*)JS_GetRuntimeOpaque(JS_GetRuntime(ctx->GetJSState()));
-        if (!deletedClassDatas) return vl;
-
-        if (deletedClassDatas->find(vl) != deletedClassDatas->end()) return nullptr;
-        return vl;
-    }
-
     static ClassData* getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
         return *(ClassData**)value;
@@ -2150,11 +1602,6 @@ struct Stack<ClassData*>
     static bool isLuaInstance(EContext* ctx, int ref)
     {
         return lua_isuserdata(ctx->GetLuaState(), ref);
-    }
-
-    static bool isJSInstance(EContext* ctx, JSValue value)
-    {
-        return JS_GetOpaque(value, JS_GetClassID(value)) != nullptr;
     }
 
     static bool IsDotnetInstance(EContext* ctx, CallContext* context, int index)

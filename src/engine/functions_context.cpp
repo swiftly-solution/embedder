@@ -16,19 +16,6 @@ FunctionContext::FunctionContext(std::string function_key, ContextKinds kind, EC
     reinterpret_cast<ScriptingFunctionCallback>(cb)(this);
 }
 
-FunctionContext::FunctionContext(std::string function_key, ContextKinds kind, EContext* ctx, JSValue* vals, int argc)
-{
-    m_function_key = function_key;
-    m_kind = kind;
-    m_ctx = ctx;
-    m_vals = vals;
-    m_argc = argc;
-
-    void* cb = ctx->GetFunctionCall("_G OnFunctionContextRegister");
-    if (!cb) return;
-    reinterpret_cast<ScriptingFunctionCallback>(cb)(this);
-}
-
 FunctionContext::FunctionContext(std::string function_key, ContextKinds kind, EContext* ctx, CallContext* callctx, bool shouldSkipFirstArgument, bool skipUData)
 {
     m_function_key = function_key;
@@ -37,7 +24,7 @@ FunctionContext::FunctionContext(std::string function_key, ContextKinds kind, EC
     m_shouldSkipFirstArgument = shouldSkipFirstArgument;
     m_skipCreatedUData = skipUData;
 
-    m_vals = (JSValue*)callctx;
+    m_vals = callctx;
 
     void* cb = ctx->GetFunctionCall("_G OnFunctionContextRegister");
     if (!cb) return;
@@ -56,7 +43,7 @@ FunctionContext::~FunctionContext()
 
 bool FunctionContext::HasResult()
 {
-    return (returnRef != LUA_NOREF || !JS_IsUndefined(returnVal));
+    return (returnRef != LUA_NOREF || m_vals->HasReturn());
 }
 
 void FunctionContext::StopExecution()
@@ -74,10 +61,6 @@ int FunctionContext::GetArgumentsCount()
     if (m_kind == ContextKinds::Lua)
     {
         return lua_gettop(m_ctx->GetLuaState()) - (int)m_shouldSkipFirstArgument - (int)m_skipCreatedUData - (int)m_shouldSkipSecondArgument;
-    }
-    else if (m_kind == ContextKinds::JavaScript)
-    {
-        return m_argc;
     }
     else if (m_kind == ContextKinds::Dotnet)
     {

@@ -4,7 +4,7 @@
 
 #include <vector>
 
-void AddScriptingVariable(EContext *ctx, std::string namespace_path, std::string variable_name, EValue value)
+void AddScriptingVariable(EContext* ctx, std::string namespace_path, std::string variable_name, EValue value)
 {
     if (ctx->GetKind() == ContextKinds::Lua)
     {
@@ -60,43 +60,9 @@ void AddScriptingVariable(EContext *ctx, std::string namespace_path, std::string
 
         lua_pop(L, pop_values);
     }
-    else if (ctx->GetKind() == ContextKinds::JavaScript)
-    {
-        auto L = ctx->GetJSState();
-        auto ns = JS_GetGlobalObject(L);
-        auto gns = ns;
-
-        if (namespace_path != "_G")
-        {
-            auto paths = str_split(namespace_path, ".");
-            for (auto path : paths)
-            {
-                if (path == "_G")
-                    break;
-
-                JSAtom at = JS_ValueToAtom(L, Stack<std::string>::pushJS(ctx, path));
-
-                if (JS_HasProperty(L, ns, at))
-                {
-                    ns = JS_GetProperty(L, ns, at);
-                }
-                else
-                {
-                    auto val = JS_NewObject(L);
-                    JS_SetProperty(L, ns, at, val);
-                    ns = val;
-                }
-
-                JS_FreeAtom(L, at);
-            }
-        }
-
-        JS_SetPropertyStr(L, ns, variable_name.c_str(), value.createValue());
-        JS_FreeValue(L, gns);
-    }
 }
 
-void AddScriptingVariables(EContext *ctx, std::string namespace_path, std::map<std::string, EValue> values)
+void AddScriptingVariables(EContext* ctx, std::string namespace_path, std::map<std::string, EValue> values)
 {
     for (auto it = values.begin(); it != values.end(); ++it)
         AddScriptingVariable(ctx, namespace_path, it->first, it->second);

@@ -18,26 +18,13 @@ ClassData::~ClassData()
         (*udata) = nullptr;
     }
 
-    std::vector<JSRuntime*> rts = GetDataOr<std::vector<JSRuntime*>>("js_runtimes", std::vector<JSRuntime*>{});
-    for (int i = 0; i < rts.size(); i++) {
-        if (JS_GetRuntimeOpaque(rts[i]) == nullptr) {
-            auto dt = new std::set<ClassData*>{};
-            JS_SetRuntimeOpaque(rts[i], dt);
-        }
-
-        auto val = (std::set<ClassData*>*)JS_GetRuntimeOpaque(rts[i]);
-        if (!val) continue;
-
-        val->insert(this);
-    }
-
     if (!m_ctx) return;
     std::string str_key = m_className + " ~" + m_className;
     void* func = m_ctx->GetClassFunctionCall(str_key);
     if (!func) return;
 
     ScriptingClassFunctionCallback cb = reinterpret_cast<ScriptingClassFunctionCallback>(func);
-    FunctionContext fctx(str_key, m_ctx->GetKind(), m_ctx, {}, 0);
+    FunctionContext fctx(str_key, m_ctx->GetKind(), m_ctx, nullptr);
     FunctionContext* fptr = &fctx;
     ClassData* data = this;
     bool ignoreCustomReturn = false;
@@ -45,7 +32,6 @@ ClassData::~ClassData()
     auto functionPreCalls = m_ctx->GetClassFunctionPreCalls(str_key);
     auto functionPostCalls = m_ctx->GetClassFunctionPostCalls(str_key);
     bool stopExecution = false;
-    JSValue ret = JS_UNDEFINED;
 
     for (void* func : functionPreCalls)
     {

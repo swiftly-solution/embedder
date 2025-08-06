@@ -21,8 +21,6 @@ static const luaL_Reg lualibs[] = {
     {NULL, NULL},
 };
 
-JSRuntime* rt = nullptr;
-
 void CheckAndPopulateRegexFunctions(std::map<std::string, std::vector<void*>>& validCalls, std::map<std::string, std::vector<void*>>& calls, std::map<std::string, void*>& functions, std::string function_key, bool forceRegenerate = false) {
     for (auto it = functions.begin(); it != functions.end(); ++it) {
         try {
@@ -65,25 +63,6 @@ EContext::EContext(ContextKinds kind)
         lua_rawsetp(state, -2, getContextKey());    // _G[key] = ud. _G
         lua_pop(state, 1);                          // empty
     }
-    else if (kind == ContextKinds::JavaScript)
-    {
-        JSRuntime* rt = JS_NewRuntime();
-        JS_SetMaxStackSize(rt, 0);
-        JSContext* ctx = JS_NewContext(rt);
-
-        JSValue global_obj = JS_GetGlobalObject(ctx);
-        JSValue console_obj = JS_NewObject(ctx);
-
-        JS_SetPropertyStr(ctx, console_obj, "log",
-                          JS_NewCFunction(ctx, CHelpers::js_print_to_console, "log", 1));
-        JS_SetPropertyStr(ctx, global_obj, "console", console_obj);
-
-        JS_FreeValue(ctx, global_obj);
-
-        JS_SetContextOpaque(ctx, (void*)this);
-
-        m_state = (void*)ctx;
-    }
     else if (kind == ContextKinds::Dotnet) {
         InitializeDotNetAPI();
     }
@@ -101,18 +80,6 @@ EContext::~EContext()
     if (m_kind == ContextKinds::Lua)
     {
         lua_close((lua_State*)m_state);
-    }
-    else if (m_kind == ContextKinds::JavaScript)
-    {
-        JSContext* ctx = (JSContext*)m_state;
-        JSRuntime* rt = JS_GetRuntime(ctx);
-        JS_FreeContext(ctx);
-
-        if (auto rtopaque = JS_GetRuntimeOpaque(rt); rtopaque != nullptr) {
-            delete ((std::set<ClassData*>*)rtopaque);
-        }
-
-        JS_FreeRuntime(rt);
     }
     else if (m_kind == ContextKinds::Dotnet)
     {
@@ -139,12 +106,6 @@ int64_t EContext::GetMemoryUsage()
         count *= 1024;
         count += lua_gc((lua_State*)m_state, LUA_GCCOUNTB, 0);
         return count;
-    }
-    else if (m_kind == ContextKinds::JavaScript)
-    {
-        JSMemoryUsage stats;
-        JS_ComputeMemoryUsage(JS_GetRuntime((JSContext*)m_state), &stats);
-        return stats.memory_used_size;
     }
     else if (m_kind == ContextKinds::Dotnet)
     {
@@ -179,14 +140,6 @@ int EContext::RunFile(std::string path)
             EException::Throw(EException(GetState(), GetKind(), cd));
         return cd;
     }
-    else if (m_kind == ContextKinds::JavaScript)
-    {
-        std::string code = files_Read(path);
-        auto res = JS_Eval((JSContext*)m_state, code.c_str(), code.length(), path.c_str(), JS_EVAL_TYPE_GLOBAL);
-        bool isException = JS_IsException(res);
-        JS_FreeValue((JSContext*)m_state, res);
-        return (int)isException;
-    }
     else if (m_kind == ContextKinds::Dotnet)
     {
         return LoadDotnetFile(this, path);
@@ -217,28 +170,6 @@ void* EContext::GetState()
 lua_State* EContext::GetLuaState()
 {
     return (lua_State*)m_state;
-}
-
-JSContext* EContext::GetJSState()
-{
-    return (JSContext*)m_state;
-}
-
-JSClassID* EContext::GetClassID(std::string className)
-{
-    if (classIDs.find(className) == classIDs.end())
-        classIDs.insert({ className, 0 });
-
-    return &classIDs[className];
-}
-
-std::string EContext::GetClsName(JSClassID id)
-{
-    for (auto it = classIDs.begin(); it != classIDs.end(); ++it)
-        if (it->second == id)
-            return it->first;
-
-    return "";
 }
 
 void EContext::AddFunctionCall(std::string key, void* val)
@@ -359,11 +290,6 @@ void EContext::AddClassMemberPostCalls(std::string key, std::pair<void*, void*> 
 std::vector<std::pair<void*, void*>> EContext::GetClassMemberPostCalls(std::string func_key)
 {
     return classMemberValidPostCalls[func_key];
-}
-
-EContext* GetContextByState(JSContext* ctx)
-{
-    return (EContext*)JS_GetContextOpaque(ctx);
 }
 
 EContext* GetContextByState(lua_State* ctx)

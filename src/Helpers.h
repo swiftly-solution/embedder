@@ -2,7 +2,6 @@
 #define _embedder_helpers_h
 
 #include <lua.hpp>
-#include <quickjs.h>
 #include <cassert>
 #include <string>
 #include <vector>
@@ -74,26 +73,9 @@ inline const void* getContextKey()
 #endif
 }
 
-inline uint32_t JSGetArrayLength(JSContext* ctx, JSValue val)
-{
-    uint32_t len;
-    auto prop = JS_GetPropertyStr(ctx, val, "length");
-    JS_ToUint32(ctx, &len, prop);
-    JS_FreeValue(ctx, prop);
-    return len;
-}
-
-inline std::string getClassName(JSContext *ctx, JSValue obj) {
-    if (!JS_IsObject(obj)) {
-        return "";
-    }
-
-    return GetContextByState(ctx)->GetClsName(JS_GetClassID(obj));
-}
-
 inline std::vector<std::string> str_split(std::string s, std::string delimiter)
 {
-    if(s.size() == 0) return {};
+    if (s.size() == 0) return {};
     size_t pos_start = 0, pos_end, delim_len = delimiter.length();
     std::string token;
     std::vector<std::string> res;
