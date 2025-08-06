@@ -43,7 +43,7 @@ FunctionContext::~FunctionContext()
 
 bool FunctionContext::HasResult()
 {
-    return (returnRef != LUA_NOREF || m_vals->HasReturn());
+    return (returnRef != LUA_NOREF || (m_vals && m_vals->HasReturn()));
 }
 
 void FunctionContext::StopExecution()
