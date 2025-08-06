@@ -10,6 +10,7 @@ FunctionContext::FunctionContext(std::string function_key, ContextKinds kind, EC
     m_shouldSkipFirstArgument = shouldSkipFirstArgument;
     m_skipCreatedUData = skipCreatedUData;
     m_shouldSkipSecondArgument = shouldSkipSecondArgument;
+    m_vals = nullptr;
 
     void* cb = ctx->GetFunctionCall("_G OnFunctionContextRegister");
     if (!cb) return;
@@ -43,7 +44,8 @@ FunctionContext::~FunctionContext()
 
 bool FunctionContext::HasResult()
 {
-    return (returnRef != LUA_NOREF || (m_vals && m_vals->HasReturn()));
+    if (m_ctx->GetKind() == ContextKinds::Dotnet) return m_vals->HasReturn();
+    else return (returnRef != LUA_NOREF);
 }
 
 void FunctionContext::StopExecution()

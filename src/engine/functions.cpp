@@ -9,7 +9,7 @@ int LuaFunctionCallback(lua_State* L)
     std::string str_key = lua_tostring(L, lua_upvalueindex(1));
     auto ctx = GetContextByState(L);
 
-    FunctionContext fctx(str_key, ctx->GetKind(), ctx);
+    FunctionContext fctx(str_key, ctx->GetKind(), ctx, false, false, false);
     FunctionContext* fptr = &fctx;
 
     auto functionPreCalls = ctx->GetFunctionPreCalls(str_key);
