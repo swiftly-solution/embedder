@@ -292,6 +292,11 @@ std::vector<std::pair<void*, void*>> EContext::GetClassMemberPostCalls(std::stri
     return classMemberValidPostCalls[func_key];
 }
 
+std::set<EValue*>& EContext::GetMappedValue()
+{
+    return mappedValues;
+}
+
 EContext* GetContextByState(lua_State* ctx)
 {
     lua_pushglobaltable(ctx);

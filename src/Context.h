@@ -81,6 +81,8 @@ public:
 
     void AddClassMemberPostCalls(std::string key, std::pair<void*, void*> val);
     std::vector<std::pair<void*, void*>> GetClassMemberPostCalls(std::string function_key);
+
+    std::set<EValue*>& GetMappedValue();
 };
 
 EContext* GetContextByState(lua_State* ctx);
