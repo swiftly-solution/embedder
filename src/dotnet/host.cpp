@@ -31,7 +31,6 @@ get_plugin_memory_fn getMemory = nullptr;
 execute_function_fn execFunction = nullptr;
 state_fn set_state = nullptr;
 
-bool initialized = false;
 void* hostfxr_lib = nullptr;
 
 #ifdef _WIN32
@@ -47,7 +46,6 @@ std::string widenedOriginPath;
 #endif
 
 bool InitializeHostFXR(std::string origin_path) {
-    if (initialized) return true;
 #ifdef _WIN32
     widenedOriginPath = StringWide(origin_path);
 #else
@@ -95,14 +93,10 @@ bool InitializeHostFXR(std::string origin_path) {
         return false;
     }
 
-    initialized = true;
-
     return true;
 }
 
 bool InitializeDotNetAPI() {
-    if (!initialized) return false;
-
     typedef void(CORECLR_DELEGATE_CALLTYPE* custom_loader_fn)(void* invokeNative, void* finalizer);
     static custom_loader_fn custom_loader = nullptr;
 
@@ -129,8 +123,6 @@ void CloseHostFXR() {
 
 int LoadDotnetFile(EContext* ctx, std::string filePath)
 {
-    if (!initialized) return 1;
-
     if (loadFile == nullptr) {
         if (_load_assembly_and_get_function_pointer) {
             int returnCode = _load_assembly_and_get_function_pointer(
@@ -150,8 +142,6 @@ int LoadDotnetFile(EContext* ctx, std::string filePath)
 
 void InterpretAsString(void* obj, int type, const char* out, int len)
 {
-    if (!initialized) return;
-
     if (interpretAsString == nullptr) {
         if (_load_assembly_and_get_function_pointer) {
             int returnCode = _load_assembly_and_get_function_pointer(
@@ -171,8 +161,6 @@ void InterpretAsString(void* obj, int type, const char* out, int len)
 
 void RemoveDotnetFile(EContext* ctx)
 {
-    if (!initialized) return;
-
     if (removeFile == nullptr) {
         if (_load_assembly_and_get_function_pointer) {
             int returnCode = _load_assembly_and_get_function_pointer(
@@ -192,8 +180,6 @@ void RemoveDotnetFile(EContext* ctx)
 
 void* DotnetAllocateContextPointer(int size, int count)
 {
-    if (!initialized) return nullptr;
-
     if (allocatePointer == nullptr) {
         if (_load_assembly_and_get_function_pointer) {
             int returnCode = _load_assembly_and_get_function_pointer(
@@ -213,8 +199,6 @@ void* DotnetAllocateContextPointer(int size, int count)
 
 uint64_t GetDotnetRuntimeMemoryUsage(void* context)
 {
-    if (!initialized) return 0;
-
     if (getMemory == nullptr) {
         if (_load_assembly_and_get_function_pointer) {
             int returnCode = _load_assembly_and_get_function_pointer(
@@ -234,8 +218,6 @@ uint64_t GetDotnetRuntimeMemoryUsage(void* context)
 
 void DotnetExecuteFunction(void* ctx, void* pctx)
 {
-    if (!initialized) return;
-
     if (execFunction == nullptr) {
         if (_load_assembly_and_get_function_pointer) {
             int returnCode = _load_assembly_and_get_function_pointer(
@@ -255,8 +237,6 @@ void DotnetExecuteFunction(void* ctx, void* pctx)
 
 void DotnetUpdateGlobalStateCleanupLock(bool state)
 {
-    if (!initialized) return;
-
     if (set_state == nullptr) {
         if (_load_assembly_and_get_function_pointer) {
             int returnCode = _load_assembly_and_get_function_pointer(
