@@ -149,6 +149,7 @@ public:
 
     inline std::string GetDebugInfo()
     {
+        if (m_cdata == nullptr) return "Unknown";
         if (!m_cdata->dbginfo_str) return "";
         else return m_cdata->dbginfo_str;
     }

@@ -47,6 +47,7 @@ public:
     {
         if (m_kind == ContextKinds::Dotnet)
         {
+            if (m_vals == nullptr) return "Unknown";
             return m_vals->GetDebugInfo();
         }
         else
