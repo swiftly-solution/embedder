@@ -31,7 +31,7 @@ void Dotnet_InvokeNative(CallData& context)
 {
     CallContext ctx(context);
     if (context.call_kind == (int)CallKind::Function) return DotNetFunctionCallback(ctx.GetArgument<EContext*>(0), ctx);
-    else if (context.call_kind == (int)CallKind::ClassFunction) return DotnetClassCallback(ctx.GetArgument<EContext*>(0), ctx);
+    else if (context.call_kind == (int)CallKind::ClassFunction) return DotnetClassCallback(ctx.GetArgument<EContext*>(0), ctx, true);
     else if (context.call_kind == (int)CallKind::CoreClassFunction) return DotnetClassCallback(ctx.GetArgument<EContext*>(0), ctx, true);
     else if (context.call_kind == (int)CallKind::ClassMember) return DotNetMemberCallback(ctx.GetArgument<EContext*>(0), ctx);
 }
