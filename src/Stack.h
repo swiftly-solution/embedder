@@ -866,9 +866,11 @@ struct Stack<char const*>
 
     static char* pushRawDotnet(EContext* ctx, CallContext* context, std::string value)
     {
-        char* string_buf = (char*)DotnetAllocateContextPointer(sizeof(char), value.size() + 1);
-        memcpy(string_buf, value.c_str(), value.size() + 1);
-        return string_buf;
+        StringData* stringData = (StringData*)DotnetAllocateContextPointer(sizeof(StringData), 1);
+        stringData->len = value.size();
+        stringData->ptr = (char*)DotnetAllocateContextPointer(sizeof(char), value.size() + 1);
+        strcpy((char*)stringData->ptr, value.c_str());
+        return (char*)stringData;
     }
 
     static void pushDotnet(EContext* ctx, CallContext* context, char const* value, bool shouldReturn = false)
@@ -921,9 +923,11 @@ struct Stack<std::string>
 
     static char* pushRawDotnet(EContext* ctx, CallContext* context, std::string value)
     {
-        char* string_buf = (char*)DotnetAllocateContextPointer(sizeof(char), value.size() + 1);
-        memcpy(string_buf, value.c_str(), value.size() + 1);
-        return string_buf;
+        StringData* stringData = (StringData*)DotnetAllocateContextPointer(sizeof(StringData), 1);
+        stringData->len = value.size();
+        stringData->ptr = (char*)DotnetAllocateContextPointer(sizeof(char), value.size() + 1);
+        strcpy((char*)stringData->ptr, value.c_str());
+        return (char*)stringData;
     }
 
     static void pushDotnet(EContext* ctx, CallContext* context, std::string& value, bool shouldReturn = false)
@@ -958,20 +962,22 @@ struct Stack<std::string>
 
     static std::string getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
-        char* out = *(char**)value;
+        StringData* out = *(StringData**)value;
         if (out == nullptr) return "(nil)";
-        else return out;
+        else if (out->ptr == nullptr) return "(nil)";
+        else return (char*)(out->ptr);
     }
 
     static std::string getDotnet(EContext* ctx, CallContext* context, int index)
     {
-        char* out = nullptr;
+        StringData* out = nullptr;
 
-        if (index == -1) out = context->GetResult<char*>();
-        else out = context->GetArgument<char*>(index);
+        if (index == -1) out = context->GetResult<StringData*>();
+        else out = context->GetArgument<StringData*>(index);
 
         if (out == nullptr) return "Empty String";
-        else return out;
+        else if (out->ptr == nullptr) return "Empty String";
+        else return (char*)(out->ptr);
     }
 
     static bool isLuaInstance(EContext* ctx, int ref)
@@ -1033,7 +1039,7 @@ struct Stack<std::vector<T>>
                 arrayPtr[i] = Stack<T>::pushRawDotnet(ctx, context, value[i]);
         }
         else if constexpr (std::is_same<std::string, T>::value) {
-            arrayData->elements = (void**)DotnetAllocateContextPointer(sizeof(char*), value.size());
+            arrayData->elements = (void**)DotnetAllocateContextPointer(sizeof(StringData*), value.size());
             arrayData->length = value.size();
             arrayData->type = typesMap[typeid(T)];
 

@@ -65,6 +65,12 @@ struct ArrayData
     int type;
 };
 
+struct StringData
+{
+    void* ptr;
+    int len;
+};
+
 struct CallData
 {
     int args_count;
@@ -204,9 +210,11 @@ public:
         auto functionData = (uint64_t*)m_args_data;
 
         if constexpr (std::is_same<T, std::string>::value) {
-            char* string_buf = (char*)DotnetAllocateContextPointer(sizeof(char), value.size() + 1);
-            memcpy(string_buf, value.c_str(), value.size() + 1);
-            *reinterpret_cast<char**>(&functionData[m_args_count]) = string_buf;
+            StringData* stringData = (StringData*)DotnetAllocateContextPointer(sizeof(StringData), 1);
+            stringData->len = value.size();
+            stringData->ptr = (char*)DotnetAllocateContextPointer(sizeof(char), value.size() + 1);
+            strcpy((char*)stringData->ptr, value.c_str());
+            *reinterpret_cast<char**>(&functionData[m_args_count]) = (char*)stringData;
         }
         else {
             if (sizeof(T) < ArgsSize)
@@ -227,9 +235,11 @@ public:
         m_cdata->has_return = 1;
 
         if constexpr (std::is_same<T, std::string>::value) {
-            char* string_buf = (char*)DotnetAllocateContextPointer(sizeof(char), value.size() + 1);
-            memcpy(string_buf, value.c_str(), value.size() + 1);
-            *reinterpret_cast<char**>(&functionData[0]) = string_buf;
+            StringData* stringData = (StringData*)DotnetAllocateContextPointer(sizeof(StringData), 1);
+            stringData->len = value.size();
+            stringData->ptr = (char*)DotnetAllocateContextPointer(sizeof(char), value.size() + 1);
+            strcpy((char*)stringData->ptr, value.c_str());
+            *reinterpret_cast<char**>(&functionData[0]) = (char*)stringData;
             return;
         }
         else {
