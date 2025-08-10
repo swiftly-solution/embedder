@@ -13,12 +13,23 @@ load_assembly_and_get_function_pointer_fn _load_assembly_and_get_function_pointe
 hostfxr_set_runtime_property_value_fn _set_runtime_prop_value = nullptr;
 hostfxr_handle fxrcxt;
 
+void* GetDotnetPointer(int kind);
+
 typedef int(CORECLR_DELEGATE_CALLTYPE* load_file_fn)(void* context, const char* filePath, int len);
 typedef void(CORECLR_DELEGATE_CALLTYPE* remove_file_fn)(void* context);
 typedef void(CORECLR_DELEGATE_CALLTYPE* interpret_as_string_fn)(void* object, int type, const char* out, int len);
 typedef void* (CORECLR_DELEGATE_CALLTYPE* allocate_pointer_fn)(int size, int count);
 typedef uint64_t(CORECLR_DELEGATE_CALLTYPE* get_plugin_memory_fn)(void* context);
 typedef void(CORECLR_DELEGATE_CALLTYPE* execute_function_fn)(void* ctx, void* pctx);
+typedef void(CORECLR_DELEGATE_CALLTYPE* state_fn)(int state);
+
+load_file_fn loadFile = nullptr;
+interpret_as_string_fn interpretAsString = nullptr;
+remove_file_fn removeFile = nullptr;
+allocate_pointer_fn allocatePointer = nullptr;
+get_plugin_memory_fn getMemory = nullptr;
+execute_function_fn execFunction = nullptr;
+state_fn set_state = nullptr;
 
 bool initialized = false;
 void* hostfxr_lib = nullptr;
@@ -120,14 +131,18 @@ int LoadDotnetFile(EContext* ctx, std::string filePath)
 {
     if (!initialized) return 1;
 
-    static load_file_fn loadFile = nullptr;
     if (loadFile == nullptr) {
-        int returnCode = _load_assembly_and_get_function_pointer(
-            (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
-            STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("LoadFile"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&loadFile
-        );
+        if (_load_assembly_and_get_function_pointer) {
+            int returnCode = _load_assembly_and_get_function_pointer(
+                (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
+                STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("LoadFile"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&loadFile
+            );
 
-        if (returnCode != 0 || loadFile == nullptr) return 1;
+            if (returnCode != 0 || loadFile == nullptr) return 1;
+        }
+        else {
+            loadFile = (load_file_fn)GetDotnetPointer(1);
+        }
     }
 
     return loadFile(ctx, filePath.c_str(), (int)filePath.size());
@@ -137,14 +152,18 @@ void InterpretAsString(void* obj, int type, const char* out, int len)
 {
     if (!initialized) return;
 
-    static interpret_as_string_fn interpretAsString = nullptr;
     if (interpretAsString == nullptr) {
-        int returnCode = _load_assembly_and_get_function_pointer(
-            (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
-            STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("InterpretAsString"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&interpretAsString
-        );
+        if (_load_assembly_and_get_function_pointer) {
+            int returnCode = _load_assembly_and_get_function_pointer(
+                (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
+                STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("InterpretAsString"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&interpretAsString
+            );
 
-        if (returnCode != 0 || interpretAsString == nullptr) return;
+            if (returnCode != 0 || interpretAsString == nullptr) return;
+        }
+        else {
+            interpretAsString = (interpret_as_string_fn)GetDotnetPointer(2);
+        }
     }
 
     interpretAsString(obj, type, out, len);
@@ -154,14 +173,18 @@ void RemoveDotnetFile(EContext* ctx)
 {
     if (!initialized) return;
 
-    static remove_file_fn removeFile = nullptr;
     if (removeFile == nullptr) {
-        int returnCode = _load_assembly_and_get_function_pointer(
-            (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
-            STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("RemoveFile"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&removeFile
-        );
+        if (_load_assembly_and_get_function_pointer) {
+            int returnCode = _load_assembly_and_get_function_pointer(
+                (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
+                STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("RemoveFile"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&removeFile
+            );
 
-        if (returnCode != 0 || removeFile == nullptr) return;
+            if (returnCode != 0 || removeFile == nullptr) return;
+        }
+        else {
+            removeFile = (remove_file_fn)GetDotnetPointer(3);
+        }
     }
 
     removeFile(ctx);
@@ -171,14 +194,18 @@ void* DotnetAllocateContextPointer(int size, int count)
 {
     if (!initialized) return nullptr;
 
-    static allocate_pointer_fn allocatePointer = nullptr;
     if (allocatePointer == nullptr) {
-        int returnCode = _load_assembly_and_get_function_pointer(
-            (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
-            STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("AllocateContextPointer"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&allocatePointer
-        );
+        if (_load_assembly_and_get_function_pointer) {
+            int returnCode = _load_assembly_and_get_function_pointer(
+                (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
+                STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("AllocateContextPointer"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&allocatePointer
+            );
 
-        if (returnCode != 0 || allocatePointer == nullptr) return nullptr;
+            if (returnCode != 0 || allocatePointer == nullptr) return nullptr;
+        }
+        else {
+            allocatePointer = (allocate_pointer_fn)GetDotnetPointer(4);
+        }
     }
 
     return allocatePointer(size, count);
@@ -188,14 +215,18 @@ uint64_t GetDotnetRuntimeMemoryUsage(void* context)
 {
     if (!initialized) return 0;
 
-    static get_plugin_memory_fn getMemory = nullptr;
     if (getMemory == nullptr) {
-        int returnCode = _load_assembly_and_get_function_pointer(
-            (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
-            STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("GetPluginMemoryUsage"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&getMemory
-        );
+        if (_load_assembly_and_get_function_pointer) {
+            int returnCode = _load_assembly_and_get_function_pointer(
+                (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
+                STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("GetPluginMemoryUsage"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&getMemory
+            );
 
-        if (returnCode != 0 || getMemory == nullptr) return 0;
+            if (returnCode != 0 || getMemory == nullptr) return 0;
+        }
+        else {
+            getMemory = (get_plugin_memory_fn)GetDotnetPointer(5);
+        }
     }
 
     return getMemory(context);
@@ -205,14 +236,18 @@ void DotnetExecuteFunction(void* ctx, void* pctx)
 {
     if (!initialized) return;
 
-    static execute_function_fn execFunction = nullptr;
     if (execFunction == nullptr) {
-        int returnCode = _load_assembly_and_get_function_pointer(
-            (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
-            STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("ExecuteFunction"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&execFunction
-        );
+        if (_load_assembly_and_get_function_pointer) {
+            int returnCode = _load_assembly_and_get_function_pointer(
+                (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
+                STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("ExecuteFunction"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&execFunction
+            );
 
-        if (returnCode != 0 || execFunction == nullptr) return;
+            if (returnCode != 0 || execFunction == nullptr) return;
+        }
+        else {
+            execFunction = (execute_function_fn)GetDotnetPointer(6);
+        }
     }
 
     return execFunction(ctx, pctx);
@@ -222,16 +257,18 @@ void DotnetUpdateGlobalStateCleanupLock(bool state)
 {
     if (!initialized) return;
 
-    typedef void(CORECLR_DELEGATE_CALLTYPE* state_fn)(int state);
-    static state_fn set_state = nullptr;
-
     if (set_state == nullptr) {
-        int returnCode = _load_assembly_and_get_function_pointer(
-            (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
-            STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("UpdateGlobalStateCleanupLock"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&set_state
-        );
+        if (_load_assembly_and_get_function_pointer) {
+            int returnCode = _load_assembly_and_get_function_pointer(
+                (widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.dll", "addons/swiftly/bin/managed/SwiftlyS2.dll")).c_str(),
+                STR("SwiftlyS2.Entrypoint, SwiftlyS2"), STR("UpdateGlobalStateCleanupLock"), UNMANAGEDCALLERSONLY_METHOD, nullptr, (void**)&set_state
+            );
 
-        if (returnCode != 0 || (void*)set_state == nullptr) return;
+            if (returnCode != 0 || (void*)set_state == nullptr) return;
+        }
+        else {
+            set_state = (state_fn)GetDotnetPointer(7);
+        }
     }
 
     set_state((int)state);
