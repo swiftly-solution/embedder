@@ -1035,8 +1035,9 @@ struct Stack<std::vector<T>>
             arrayData->type = typesMap[typeid(void*)];
 
             void** arrayPtr = (void**)arrayData->elements;
-            for (int i = 0; i < value.size(); i++)
+            for (int i = 0; i < value.size(); i++) {
                 arrayPtr[i] = Stack<T>::pushRawDotnet(ctx, context, value[i]);
+            }
         }
         else if constexpr (std::is_same<std::string, T>::value) {
             arrayData->elements = (void**)DotnetAllocateContextPointer(sizeof(StringData*), value.size());
@@ -1046,6 +1047,15 @@ struct Stack<std::vector<T>>
             char** arrayPtr = (char**)arrayData->elements;
             for (int i = 0; i < value.size(); i++)
                 arrayPtr[i] = Stack<T>::pushRawDotnet(ctx, context, value[i]);
+        }
+        else if constexpr (std::is_same<EValue, T>::value) {
+            arrayData->elements = (void**)DotnetAllocateContextPointer(sizeof(void*), value.size());
+            arrayData->length = value.size();
+            arrayData->type = typesMap[typeid(void*)];
+
+            void** arrayPtr = (void**)arrayData->elements;
+            for (int i = 0; i < value.size(); i++)
+                arrayPtr[i] = Stack<T>::pushRawDotnet(ctx, context, value[i]).getPointer();
         }
         else {
             arrayData->elements = (void**)DotnetAllocateContextPointer(sizeof(T), value.size());
