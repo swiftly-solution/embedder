@@ -438,12 +438,13 @@ struct Stack<EValue>
 
     static EValue getRawDotnet(EContext* ctx, CallContext* context, void* value)
     {
-        return *(EValue*)value;
+        return EValue(ctx, value, 1);
     }
 
-    static EValue getDotnet(EContext* ctx, CallContext* context, bool shouldReturn = false)
+    static EValue getDotnet(EContext* ctx, CallContext* context, int index)
     {
-        return EValue(ctx);
+        if (index == -1) return EValue(ctx, *(void**)context->GetResultPtr(), context->GetReturnType());
+        else return EValue(ctx, *(void**)context->GetArgumentPtr(index), context->GetArgumentType(index));
     }
 
     static bool isLuaInstance(EContext* ctx, int ref)
