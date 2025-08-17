@@ -75,11 +75,11 @@ bool InitializeHostFXR(std::string origin_path) {
     std::string path = widenedOriginPath + "addons/swiftly/bin/managed/dotnet";
 #endif
 
-    memcpy(dotnet_path, path.c_str(), path.size() >= 1024 ? 1023 : path.size());
+    memcpy(dotnet_path, path.c_str(), path.size() * sizeof(char_t) >= 1024 ? 1023 : path.size() * sizeof(char_t));
 
     params.dotnet_root = dotnet_path;
 
-    int returnCode = _initialize_for_runtime_config((widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.runtime.json", "addons/swiftly/bin/managed/SwiftlyS2.runtimeconfig.json")).c_str(), &params, &fxrcxt);
+    int returnCode = _initialize_for_runtime_config((widenedOriginPath + WIN_LIN(L"addons\\swiftly\\bin\\managed\\SwiftlyS2.runtimeconfig.json", "addons/swiftly/bin/managed/SwiftlyS2.runtimeconfig.json")).c_str(), &params, &fxrcxt);
     if (returnCode != 0) {
         _close(fxrcxt);
         return false;
