@@ -122,6 +122,28 @@ void DotnetClassCallback(EContext* ctx, CallContext& call_ctx, bool bypassClassC
     if (splits[0] == splits[1])
     {
         data = new ClassData({}, splits[0], ctx);
+        
+        void* classPtr = nullptr;
+        int argType = call_ctx.GetArgumentType(1);
+        uint64_t argValue = call_ctx.GetArgument<uint64_t>(1);
+
+        switch (argType)
+        {
+            case 18: // Argument is ClassData*
+            {
+                classPtr = reinterpret_cast<ClassData*>(argValue)->GetData<void*>("class_ptr");
+                break;
+            }
+            case 14: // Argument is std::string* (hex address)
+            {
+                classPtr = reinterpret_cast<void*>(std::stoull(*reinterpret_cast<std::string*>(argValue), nullptr, 16));
+                break;
+            }
+        }
+
+        data->SetData("class_ptr", classPtr);
+        data->SetData("class_name", splits[0]);
+
         Stack<ClassData*>::pushDotnet(ctx, &call_ctx, data, true);
         MarkDeleteOnGC(data);
     }
